@@ -21,6 +21,33 @@ Notes:
 
 ---
 
+## [1.8.0] - 2025-11-29
+
+### Changed
+
+- **Code Quality**: Standardized Pascal comment style across all source files:
+  - Use `//` for short comments (1–3 lines)
+  - Use `(* *)` for longer documentation blocks
+  - Reserve `{ }` for compiler directives only
+- **Bug Fixes**: Fixed regex quantifier syntax errors throughout codebase:
+  - Corrected invalid `(*n,m*)` syntax to standard `{n,m}` in `IsValidURL`, `IsValidIPv4`, `IsValidIPv6`, `IsValidEmail`, and `HexDecode`
+  - Fixed comment parsing issue with `*)` sequences in documentation blocks by restructuring pattern descriptions
+- **Documentation**: Enhanced beginner experience:
+  - Added "Project Philosophy" section to CONTRIBUTING.md explaining beginner-friendly design and IDE support rationale
+  - Added "Working Examples" section to README.md with ready-to-run example programs (StringKitExample, CaseAndEncodeDemo, EncodeOnlyDemo)
+  - Added "Common Beginner Questions" section to README.md addressing top usage questions
+  - Updated version badge in README.md to 1.8.0
+  - Updated Lazarus package version to 1.8.0 in `packages/lazarus/stringkit_fp.lpk`
+
+### Notes
+
+- All 144 tests passing (72 TStringTests + 72 TStringHelperTests)
+- No breaking changes or functionality modifications
+- Focus on code quality, correctness, and documentation improvements
+
+
+---
+
 ## Release [1.7.0] - 2025-08-19
 
 ### Changed

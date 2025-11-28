@@ -2,10 +2,10 @@ program EncodeOnlyDemo;
 
 {$mode objfpc}{$H+}{$J-}
 
-{ This demo showcases compiling StringKitHelper with only the SK_ENCODE group enabled.
-  Build with FPC (from repo root):
-    fpc -dSK_ANY -dSK_ENCODE -Fu./src ./examples/directives/EncodeOnlyDemo.pas
-}
+(* This demo showcases compiling StringKitHelper with only the SK_ENCODE group enabled.
+   Build with FPC (from repo root):
+     fpc -dSK_ANY -dSK_ENCODE -Fu./src ./examples/directives/EncodeOnlyDemo.pas
+*)
 
 uses
   SysUtils,

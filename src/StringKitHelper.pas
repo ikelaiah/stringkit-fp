@@ -1,25 +1,25 @@
 unit StringKitHelper;
 
-{
+(*
   StringKitHelper - A string type helper for TStringKit
-  
+
   This unit provides a string type helper (TStringHelperEx) that wraps the static
   methods of TStringKit, allowing for more natural instance-style method calls
   on string variables and literals.
-  
+
   Example usage:
     var
       S: string;
     begin
       S := '  hello world  ';
       S := S.Trim; // Instance-style call
-      
+
       // Original static call still works:
       S := TStringKit.Trim('  hello  ');
     end;
 
   See docs/stringkit-helper-coverage.md for details.
-}
+*)
 
 {$mode objfpc}{$H+}{$J-}
 {$modeswitch typehelpers}
@@ -48,7 +48,7 @@ uses
 {$ENDIF}
 
 type
-  { TStringHelperEx }
+  // TStringHelperEx
   TStringHelperEx = type helper for string
   public
     {$IFDEF SK_MANIP}
@@ -94,7 +94,7 @@ type
 
 implementation
 
-{ TStringHelperEx }
+// TStringHelperEx
 
 {$IFDEF SK_MANIP}
   {$I 'inc/Manip.impl.inc'}

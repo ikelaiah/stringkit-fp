@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/Docs-Available-brightgreen.svg)](docs/)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](tests/)
 [![Status](https://img.shields.io/badge/Status-Ready%20to%20Weave-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/Version-1.7.0-blueviolet.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.8.0-blueviolet.svg)]()
 
 
 <p align="center">
@@ -522,6 +522,78 @@ begin
 end;
 ```
 
+## 📂 Working Examples
+
+The `examples/` folder contains ready-to-run programs demonstrating StringKit-FP features:
+
+### 🎨 StringKitExample
+
+A comprehensive demonstration program showing all major StringKit-FP functionality:
+
+```bash
+fpc -Fu./src ./examples/StringKitExample/StringKitExample.pas
+./StringKitExample
+```
+
+This example covers:
+
+- Basic string operations (trim, case conversion, padding)
+- Pattern matching and validation
+- String similarity algorithms
+- Text analysis and formatting
+- Web encoding (HTML, URL, Base64)
+- Number formatting and conversion
+
+### 🔧 Selective Feature Examples
+
+For selective feature compilation using feature flags:
+
+**CaseAndEncodeDemo** - Compile with only CASE and ENCODE features:
+
+```bash
+fpc -dSK_ANY -dSK_CASE -dSK_ENCODE -Fu./src ./examples/directives/CaseAndEncodeDemo.pas
+./CaseAndEncodeDemo
+```
+
+**EncodeOnlyDemo** - Compile with only ENCODE feature:
+
+```bash
+fpc -dSK_ANY -dSK_ENCODE -Fu./src ./examples/directives/EncodeOnlyDemo.pas
+./EncodeOnlyDemo
+```
+
+These examples demonstrate the modular helper system and how to build lightweight custom versions of StringKit-FP.
+
+## 🚨 Common Beginner Questions
+
+**Q: Why does `.Trim` not work on my string?**
+
+A: Make sure you have `StringKitHelper` in your `uses` clause. Without it, you must use `TStringKit.Trim()` instead.
+
+```pascal
+uses StringKit, StringKitHelper;  // Add StringKitHelper to enable instance methods
+
+S := '  hello  '.Trim;  // Now this works!
+```
+
+**Q: Can I use just the static methods without the helper?**
+
+A: Absolutely! The helper is optional. Use `TStringKit.FunctionName()` for static method calls without importing StringKitHelper.
+
+```pascal
+uses StringKit;  // Helper not needed for static methods
+
+S := TStringKit.Trim('  hello  ');  // This always works
+```
+
+**Q: What's the difference between the two approaches?**
+
+| Approach | Style | Requires StringKitHelper | Example |
+|----------|-------|------------------------|---------|
+| Instance-style | Modern, fluent | ✅ Yes | `'hello'.Trim` |
+| Static method | Traditional | ❌ No | `TStringKit.Trim('hello')` |
+
+Both are equally valid - choose whichever you prefer!
 
 ## 📖 System Requirements
 

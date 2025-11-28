@@ -7,13 +7,13 @@ uses
   StringKit.Test;
 
 type
-  { TMyTestRunner }
+  // TMyTestRunner
   TMyTestRunner = class(TConsoleTestRunner)
   protected
     procedure WriteTestHeader(ATest: TTest); override;
   end;
 
-{ TMyTestRunner }
+// TMyTestRunner
 
 procedure TMyTestRunner.WriteTestHeader(ATest: TTest);
 begin
