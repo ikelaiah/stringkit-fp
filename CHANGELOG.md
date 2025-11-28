@@ -37,6 +37,7 @@ Notes:
   - Added "Working Examples" section to README.md with ready-to-run example programs (StringKitExample, CaseAndEncodeDemo, EncodeOnlyDemo)
   - Added "Common Beginner Questions" section to README.md addressing top usage questions
   - Updated version badge in README.md to 1.8.0
+  - Updated Lazarus package version to 1.8.0 in `packages/lazarus/stringkit_fp.lpk`
 
 ### Notes
 
