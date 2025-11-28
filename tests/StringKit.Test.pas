@@ -13,7 +13,7 @@ type
 
 type
 
-  { TStringTests }
+  // TStringTests
   TStringTests = class(TTestCase)
   protected
     procedure SetUp; override;
@@ -110,7 +110,7 @@ type
 
 implementation
 
-{ TStringTests }
+// TStringTests
 
 procedure TStringTests.SetUp;
 begin

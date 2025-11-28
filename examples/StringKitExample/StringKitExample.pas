@@ -1,25 +1,25 @@
 program StringKitExample;
 
 {$mode objfpc}{$H+}{$J-}
-{ This example demonstrates the string manipulation capabilities of TStringKit class.
-  It shows various string operations like:
-  - Basic operations (trim, case conversion, etc)
-  - Advanced operations (padding, reversing, etc) 
-  - Pattern matching and regular expressions
-  - String analysis and information
-  - String extraction and substring handling
-  
-  The example creates a TTextProcessor class that demonstrates each category
-  of functionality with sample text input. }
+(* This example demonstrates the string manipulation capabilities of TStringKit class.
+   It shows various string operations like:
+   - Basic operations (trim, case conversion, etc)
+   - Advanced operations (padding, reversing, etc)
+   - Pattern matching and regular expressions
+   - String analysis and information
+   - String extraction and substring handling
+
+   The example creates a TTextProcessor class that demonstrates each category
+   of functionality with sample text input. *)
 
 uses
   Classes, SysUtils, StringKit;
 
 type
-  { TTextProcessor
-    A class that demonstrates various string manipulation capabilities
-    provided by TStringKit. Each method shows different aspects of
-    string processing functionality. }
+  (* TTextProcessor
+     A class that demonstrates various string manipulation capabilities
+     provided by TStringKit. Each method shows different aspects of
+     string processing functionality. *)
   TTextProcessor = class
   private
     FText: string; // The sample text to process
@@ -33,7 +33,7 @@ type
     procedure ShowStringExtraction;    // Shows string extraction and substring operations
   end;
 
-{ TTextProcessor }
+// TTextProcessor
 
 constructor TTextProcessor.Create(const AText: string);
 begin
@@ -79,7 +79,7 @@ var
 begin
   WriteLn('Pattern Matching:');
   WriteLn('-----------------');
-  
+
   // Demonstrates email address extraction using regex
   EmailMatches := TStringKit.ExtractMatches(FText, '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b');
   WriteLn('Email Addresses Found:');
@@ -90,14 +90,14 @@ begin
   end
   else
     WriteLn('No email addresses found.');
-    
+
   // Shows how to extract all words from text
   AllMatches := TStringKit.ExtractAllMatches(FText, '\b\w+\b');
   WriteLn('All Words Found:');
   for I := 0 to High(AllMatches) do
     Write(AllMatches[I], ', ');
   WriteLn;
-  
+
   // Simple pattern matching tests
   WriteLn('Contains email? ', TStringKit.MatchesPattern(FText, '@'));
   WriteLn('Contains number? ', TStringKit.MatchesPattern(FText, '\d+'));
@@ -129,7 +129,7 @@ begin
   WriteLn('First 5 chars: ', TStringKit.LeftStr(FText, 5));        // Extract from start
   WriteLn('Last 5 chars: ', TStringKit.RightStr(FText, 5));        // Extract from end
   WriteLn('Substring (6,5): ', TStringKit.SubString(FText, 6, 5)); // Extract from middle
-  
+
   // Demonstrates word extraction
   WriteLn('Words:');
   Words := TStringKit.GetWords(FText);
@@ -159,7 +159,7 @@ var
 begin
   try
     // Create a sample text with various features to demonstrate capabilities
-    SampleText := 
+    SampleText :=
       '  The quick brown fox jumps over the lazy dog!  ' + LineEnding +
       'Contact us at support@example.com or info@hello.com for more information.' + LineEnding +
       'This is an    example   with    multiple    spaces and numbers 12345.';

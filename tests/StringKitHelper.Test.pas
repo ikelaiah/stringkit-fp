@@ -1,13 +1,13 @@
 unit StringKitHelper.Test;
 
-{
+(*
   StringKitHelper.Test - Test cases for TStringHelperEx
-  
+
   This unit contains test cases for the TStringHelperEx string helper class,
   which provides instance-style method calls for string manipulation.
-  
+
   Generated on: 2025-02-15
-}
+*)
 
 {$mode objfpc}{$H+}{$J-}
 
@@ -20,7 +20,7 @@ type
   TStringArray = array of string;
 
 type
-  { TStringHelperTests }
+  // TStringHelperTests
   TStringHelperTests = class(TTestCase)
   protected
     procedure SetUp; override;
@@ -118,7 +118,7 @@ type
 
 implementation
 
-{ TStringHelperTests }
+// TStringHelperTests
 
 procedure TStringHelperTests.SetUp;
 begin

@@ -2,10 +2,10 @@ program CaseAndEncodeDemo;
 
 {$mode objfpc}{$H+}{$J-}
 
-{ This demo showcases compiling StringKitHelper with SK_CASE and SK_ENCODE groups enabled.
-  Build with FPC (from repo root):
-    fpc -dSK_ANY -dSK_CASE -dSK_ENCODE -Fu./src ./examples/directives/CaseAndEncodeDemo.pas
-}
+(* This demo showcases compiling StringKitHelper with SK_CASE and SK_ENCODE groups enabled.
+   Build with FPC (from repo root):
+     fpc -dSK_ANY -dSK_CASE -dSK_ENCODE -Fu./src ./examples/directives/CaseAndEncodeDemo.pas
+*)
 
 uses
   SysUtils,

@@ -10,6 +10,17 @@ Thank you for your interest in contributing to StringKit-FP! We want to make con
 - Focus on what is best for the community
 - Show empathy towards other community members
 
+## 🎯 Project Philosophy
+
+StringKit-FP is designed to be **beginner-friendly** and **accessible to developers of all skill levels**. This means:
+
+- **Multiple tool support**: We support both CLI tools (FPC) and IDEs (Lazarus) to cater to different workflows and preferences
+- **Lower barrier to entry**: Not all beginners are comfortable with command-line tools; IDE support makes the project more approachable
+- **Flexible workflows**: Different developers have different preferences and work styles, and we support multiple approaches
+- **Educational value**: By supporting multiple tools, we help beginners learn in their preferred environment
+
+When considering contributions or architectural decisions, please keep beginner-friendliness in mind. Features, examples, or documentation that help newcomers understand and use the library are highly valued. This includes maintaining support for popular IDEs like Lazarus, which is widely used in the Pascal community.
+
 ## 🚀 Getting Started
 
 1. Fork the repository
@@ -47,11 +58,17 @@ Thank you for your interest in contributing to StringKit-FP! We want to make con
 - Line comments for implementation details
 - Document public methods using:
   ```pascal
-  { @description Detailed description
+  (* @description Detailed description
     @param ParamName Description
-    @return Description of return value }
+    @return Description of return value *)
   ```
 - Comments should explain why, not what (the code should be self-documenting)
+
+#### Comment Style
+
+- Use `//` for short comments (1–3 lines)
+- Use `(* *)` for longer documentation blocks or when commenting out code
+- Consider reserving `{ }` for compiler directives
 
 #### Code Organization
 - Public methods first, then protected, then private
@@ -73,6 +90,7 @@ Thank you for your interest in contributing to StringKit-FP! We want to make con
 - Reference issues when relevant
 
 Example:
+
 ```
 Add string reverse function to TStringKit
 
@@ -129,6 +147,7 @@ Types:
 ## 📚 Documentation Contributions
 
 We especially welcome documentation improvements:
+
 - Fix typos
 - Add examples
 - Clarify confusing sections
@@ -138,6 +157,7 @@ We especially welcome documentation improvements:
 ## ⭐ Recognition
 
 Contributors will be recognized in:
+
 - CONTRIBUTORS.md file
 - Release notes
 - Project documentation

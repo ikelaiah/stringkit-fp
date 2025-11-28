@@ -9,7 +9,7 @@ uses
   , StringKitHelper.Test;
 type
 
-  { TMyTestRunner }
+  (* TMyTestRunner *)
 
   TMyTestRunner = class(TTestRunner)
   protected

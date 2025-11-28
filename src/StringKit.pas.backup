@@ -8,37 +8,37 @@ uses
   Classes, SysUtils, Types, RegExpr, StrUtils, Math, DateUtils, base64;
 
 type
-  (* TStringMatch
+  { TStringMatch
     ------------
     Represents a single match result from pattern matching operations.
     Contains the matched text, its position in the original string,
-    and the length of the match. *)
+    and the length of the match. }
   TStringMatch = record
     Text: string;      // The matched text
     Position: Integer; // Starting position in original string (1-based)
     Length: Integer;   // Length of the matched text
   end;
   
-  (*
+  {
     TMatchResults
     --------------
     Array of TStringMatch records for pattern matching results.
-  *)
+  }
   TMatchesResults = array of TStringMatch;
 
   
 
-  (* TStringKit
+  { TStringKit
     ----------
     A comprehensive toolkit for string manipulation operations.
     Provides methods for common string operations like trimming,
     case conversion, padding, pattern matching, and more.
     
     All methods are static (class functions) for ease of use - 
-    no need to create instances. *)
+    no need to create instances. }
   TStringKit = class
   private
-    (*
+    {
       @description Checks if a character is considered whitespace.
                    Whitespace characters are space (#32), tab (#9), line feed (#10),
                    and carriage return (#13).
@@ -56,10 +56,10 @@ type
         Result := IsWhiteSpace(' '); // Returns: True
         Result := IsWhiteSpace(#9);  // Returns: True
         Result := IsWhiteSpace('A'); // Returns: False
-    *)
+    }
     class function IsWhiteSpace(const C: Char): Boolean; static;
     
-    (*
+    {
       @description Computes the minimum value among three integers.
       
       @usage Use when implementing algorithms that require finding
@@ -76,10 +76,10 @@ type
       @example
         Result := Min3(5, 2, 8); // Returns: 2
         Result := Min3(-1, -5, 0); // Returns: -5
-    *)
+    }
     class function Min3(A, B, C: Integer): Integer; static;
     
-    (*
+    {
       @description Computes the minimum value between two integers.
       
       @usage Use when implementing string similarity algorithms
@@ -95,10 +95,10 @@ type
       @example
         Result := Min2(5, 2); // Returns: 2
         Result := Min2(-1, 5); // Returns: -1
-    *)
+    }
     class function Min2(A, B: Integer): Integer; static;
     
-    (*
+    {
       @description Computes the maximum value between two integers.
       
       @usage Use when implementing string similarity algorithms
@@ -114,10 +114,10 @@ type
       @example
         Result := Max2(5, 2); // Returns: 5
         Result := Max2(-1, 5); // Returns: 5
-    *)
+    }
     class function Max2(A, B: Integer): Integer; static;
     
-    (*
+    {
       @description Counts the number of vowel groups in a word.
                    A vowel group is a contiguous sequence of vowels (a, e, i, o, u, y).
                    Includes a heuristic to handle silent 'e' at the end of words.
@@ -139,10 +139,10 @@ type
         Result := CountVowelGroups('the');       // Returns: 1 (e) - silent 'e' rule doesn't apply as 'h' is not a vowel.
         Result := CountVowelGroups('me');        // Returns: 1 (e) - silent 'e' rule reduces count from 1 to 0, then minimum 1 is enforced.
         Result := CountVowelGroups('');          // Returns: 1
-    *)
+    }
     class function CountVowelGroups(const Word: string): Integer; static;
   public
-    (*
+    {
       @description Removes leading and trailing whitespace (space, tab, CR, LF) from a string.
                    Uses the standard SysUtils.Trim function.
       
@@ -159,10 +159,10 @@ type
         Result := Trim(#9'Tabbed'#13#10); // Returns: 'Tabbed'
         Result := Trim('   ');            // Returns: ''
         Result := Trim('');               // Returns: ''
-    *)
+    }
     class function Trim(const Text: string): string; static;
     
-    (*
+    {
       @description Removes leading whitespace (space, tab, CR, LF) from a string.
                    Uses the standard SysUtils.TrimLeft function.
       
@@ -179,10 +179,10 @@ type
         Result := TrimLeft(#9'Tabbed'#13#10); // Returns: 'Tabbed'#13#10
         Result := TrimLeft('NoSpaces');       // Returns: 'NoSpaces'
         Result := TrimLeft('');               // Returns: ''
-    *)
+    }
     class function TrimLeft(const Text: string): string; static;
     
-    (*
+    {
       @description Removes trailing whitespace (space, tab, CR, LF) from a string.
                    Uses the standard SysUtils.TrimRight function.
       
@@ -199,10 +199,10 @@ type
         Result := TrimRight(#9'Tabbed'#13#10); // Returns: #9'Tabbed'
         Result := TrimRight('NoSpaces');       // Returns: 'NoSpaces'
         Result := TrimRight('');               // Returns: ''
-    *)
+    }
     class function TrimRight(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to its uppercase representation.
                    Uses the standard SysUtils.UpperCase function.
       
@@ -219,10 +219,10 @@ type
         Result := ToUpper('already_UPPER'); // Returns: 'ALREADY_UPPER'
         Result := ToUpper('123');         // Returns: '123'
         Result := ToUpper('');            // Returns: ''
-    *)
+    }
     class function ToUpper(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to its lowercase representation.
                    Uses the standard SysUtils.LowerCase function.
       
@@ -239,10 +239,10 @@ type
         Result := ToLower('ALREADY_lower'); // Returns: 'already_lower'
         Result := ToLower('123');         // Returns: '123'
         Result := ToLower('');            // Returns: ''
-    *)
+    }
     class function ToLower(const Text: string): string; static;
     
-    (*
+    {
       @description Centers a string within a specified width by adding padding characters
                    on both sides. If the padding cannot be distributed evenly, the right side
                    will have the extra padding character.
@@ -264,10 +264,10 @@ type
         Result := PadCenter('Hello', 5);     // Returns: 'Hello'
         Result := PadCenter('Hello', 3);     // Returns: 'Hello'
         Result := PadCenter('', 5, '-');     // Returns: '-- --' (Note: Right side gets extra if uneven)
-    *)
+    }
     class function PadCenter(const Text: string; Width: Integer; PadChar: Char = ' '): string; static;
     
-    (*
+    {
       @description Adds padding characters to the left of a string to reach a specified width.
       
       @usage Use for right-aligning text or numbers in fixed-width output.
@@ -287,10 +287,10 @@ type
         Result := PadLeft('Hello', 5);     // Returns: 'Hello'
         Result := PadLeft('Hello', 3);     // Returns: 'Hello'
         Result := PadLeft('', 5, '-');     // Returns: '-----'
-    *)
+    }
     class function PadLeft(const Text: string; Width: Integer; PadChar: Char = ' '): string; static;
     
-    (*
+    {
       @description Adds padding characters to the right of a string to reach a specified width.
       
       @usage Use for left-aligning text in fixed-width output.
@@ -310,10 +310,10 @@ type
         Result := PadRight('Hello', 5);     // Returns: 'Hello'
         Result := PadRight('Hello', 3);     // Returns: 'Hello'
         Result := PadRight('', 5, '-');     // Returns: '-----'
-    *)
+    }
     class function PadRight(const Text: string; Width: Integer; PadChar: Char = ' '): string; static;
     
-    (*
+    {
       @description Replaces sequences of multiple whitespace characters (space, tab, CR, LF)
                    within a string with a single space character. Leading and trailing
                    whitespace are handled like internal whitespace.
@@ -335,10 +335,10 @@ type
         Result := CollapseWhitespace(#9'Tab'#10#13'Newline'); // Returns: ' Tab Newline'
         Result := CollapseWhitespace('   ');              // Returns: ' '
         Result := CollapseWhitespace('');                 // Returns: ''
-    *)
+    }
     class function CollapseWhitespace(const Text: string): string; static;
     
-    (*
+    {
       @description Removes all whitespace characters (space, tab, CR, LF) from a string.
       
       @usage Use when all whitespace needs to be eliminated, for example, before certain
@@ -356,10 +356,10 @@ type
         Result := RemoveWhitespace(#9'Tab'#10#13'Newline'); // Returns: 'TabNewline'
         Result := RemoveWhitespace('   ');              // Returns: ''
         Result := RemoveWhitespace('');                 // Returns: ''
-    *)
+    }
     class function RemoveWhitespace(const Text: string): string; static;
     
-    (*
+    {
       @description Repeats a string a specified number of times, concatenating the results.
       
       @usage Use when you need to create patterns, separator lines,
@@ -379,10 +379,10 @@ type
         Result := DuplicateText('Test', 1); // Returns: 'Test'
         Result := DuplicateText('Test', 0); // Returns: ''
         Result := DuplicateText('', 5);    // Returns: ''
-    *)
+    }
     class function DuplicateText(const Text: string; Count: Integer): string; static;
     
-    (*
+    {
       @description Reverses the order of characters in a string.
       
       @usage Use when you need to invert the character order,
@@ -400,10 +400,10 @@ type
         Result := ReverseText('racecar'); // Returns: 'racecar'
         Result := ReverseText('123');   // Returns: '321'
         Result := ReverseText('');      // Returns: ''
-    *)
+    }
     class function ReverseText(const Text: string): string; static;
     
-    (*
+    {
       @description Capitalizes the first character of each word in a string. Words are
                    determined by splitting the string by spaces.
       
@@ -426,10 +426,10 @@ type
         Result := CapitalizeText('multiple   spaces'); // Returns: 'Multiple   Spaces' (preserves spaces)
         Result := CapitalizeText('already Capitalized'); // Returns: 'Already Capitalized'
         Result := CapitalizeText('');                // Returns: ''
-    *)
+    }
     class function CapitalizeText(const Text: string): string; static;
     
-    (*
+    {
       @description Finds all occurrences of a regular expression pattern within a text
                    and returns detailed information about each match.
       
@@ -456,10 +456,10 @@ type
         
         Result := ExtractMatches('No digits here', '\d+');
         // Length(Result) = 0
-    *)
+    }
     class function ExtractMatches(const Text, Pattern: string): TMatchesResults; static;
     
-    (*
+    {
       @description Extracts all substrings that match a given regular expression pattern.
                    This function returns only the matched text itself, without position or length info.
       
@@ -483,10 +483,10 @@ type
         
         Result := ExtractAllMatches('No emails here', '\w+@\w+\.\w+');
         // Length(Result) = 0
-    *)
+    }
     class function ExtractAllMatches(const Text, Pattern: string): TStringDynArray; static;
     
-    (*
+    {
       @description Tests if a string fully matches a given regular expression pattern.
       
       @usage Use for validating string formats, such as checking if input conforms to
@@ -513,10 +513,10 @@ type
         
         // Example from original comment (valid email format check)
         Result := MatchesPattern('test@example.com', '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'); // Returns: True
-    *)
+    }
     class function MatchesPattern(const Text, Pattern: string): Boolean; static;
     
-    (*
+    {
       @description Replaces all occurrences of text matching a regular expression pattern
                    with a specified replacement string. Supports backreferences (e.g., $1, $2)
                    in the replacement string.
@@ -544,10 +544,10 @@ type
         
         // Remove all digits
         Result := ReplaceRegEx('abc123def456', '\d+', ''); // Returns: 'abcdef'
-    *)
+    }
     class function ReplaceRegEx(const Text, Pattern, Replacement: string): string; static;
     
-    (*
+    {
       @description Replaces all occurrences of a specific substring (OldText) with another
                    string (NewText) within a given text. This is a case-sensitive replacement.
       
@@ -568,10 +568,10 @@ type
         Result := ReplaceText('ababab', 'ab', 'X');                         // Returns: 'XXX'
         Result := ReplaceText('No change', 'xyz', 'abc');                   // Returns: 'No change'
         Result := ReplaceText('Test', '', 'X');                             // Returns: 'Test'
-    *)
+    }
     class function ReplaceText(const Text, OldText, NewText: string): string; static;
     
-    (*
+    {
       @description Splits text into an array of words based on alphanumeric characters.
                    Sequences of letters (A-Z, a-z) and digits (0-9) are considered words.
                    Any other character acts as a delimiter.
@@ -604,10 +604,10 @@ type
         
         Result := GetWords('---');
         // Length(Result) = 0
-    *)
+    }
     class function GetWords(const AText: string): TStringDynArray; static;
     
-    (*
+    {
       @description Counts the number of non-overlapping occurrences of a substring within a text.
                    The search is case-sensitive.
       
@@ -628,10 +628,10 @@ type
         Result := CountSubString('Hello', 'L');   // Returns: 0 (case-sensitive)
         Result := CountSubString('Test', '');     // Returns: 0
         Result := CountSubString('', 'a');      // Returns: 0
-    *)
+    }
     class function CountSubString(const Text, SubStr: string): Integer; static;
     
-    (*
+    {
       @description Tests if a string contains a specific substring.
                    The check is case-sensitive.
       
@@ -652,10 +652,10 @@ type
         Result := Contains('Test', 'xyz');        // Returns: False
         Result := Contains('Test', '');           // Returns: False
         Result := Contains('', 'a');            // Returns: False
-    *)
+    }
     class function Contains(const Text, SubStr: string): Boolean; static;
     
-    (*
+    {
       @description Tests if a string starts with a specific prefix.
                    The comparison is case-sensitive.
       
@@ -679,10 +679,10 @@ type
         Result := StartsWith('Test', '');           // Returns: True
         Result := StartsWith('', 'a');            // Returns: False
         Result := StartsWith('', '');             // Returns: True
-    *)
+    }
     class function StartsWith(const Text, Prefix: string): Boolean; static;
     
-    (*
+    {
       @description Tests if a string ends with a specific suffix.
                    The comparison is case-sensitive.
       
@@ -705,10 +705,10 @@ type
         Result := EndsWith('Test', '');          // Returns: True
         Result := EndsWith('', 'a');           // Returns: False
         Result := EndsWith('', '');            // Returns: True
-    *)
+    }
     class function EndsWith(const Text, Suffix: string): Boolean; static;
     
-    (*
+    {
       @description Tests if a string is empty (has zero length).
       
       @usage Use to check for empty strings before processing or to validate input.
@@ -723,10 +723,10 @@ type
         Result := IsEmpty('');         // Returns: True
         Result := IsEmpty(' ');        // Returns: False
         Result := IsEmpty('Hello');    // Returns: False
-    *)
+    }
     class function IsEmpty(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Gets the length (number of characters) of a string.
                    Uses the standard System.Length function.
       
@@ -743,10 +743,10 @@ type
         Result := GetLength('Hello'); // Returns: 5
         Result := GetLength('');      // Returns: 0
         Result := GetLength(' ');     // Returns: 1
-    *)
+    }
     class function GetLength(const Text: string): Integer; static;
     
-    (*
+    {
       @description Extracts a substring from a given string based on a starting position and length.
                    Uses the standard System.Copy function.
       
@@ -771,10 +771,10 @@ type
         Result := SubString('Hello', 6, 1);       // Returns: '' (StartPos is beyond end)
         Result := SubString('Hello', 3, 0);       // Returns: '' (Length is zero)
         Result := SubString('Hello', 0, 3);       // Returns: '' (StartPos <= 0, behavior might vary)
-    *)
+    }
     class function SubString(const Text: string; StartPos, Length: Integer): string; static;
     
-    (*
+    {
       @description Gets a specified number of characters from the beginning (left side) of a string.
                    Equivalent to SubString(Text, 1, Length).
       
@@ -793,10 +793,10 @@ type
         Result := LeftStr('Hello', 10);      // Returns: 'Hello'
         Result := LeftStr('Hello', 0);       // Returns: ''
         Result := LeftStr('', 5);          // Returns: ''
-    *)
+    }
     class function LeftStr(const Text: string; Length: Integer): string; static;
     
-    (*
+    {
       @description Gets a specified number of characters from the end (right side) of a string.
       
       @usage Use to extract the last part of a string, like a suffix, extension, or trailer.
@@ -814,10 +814,10 @@ type
         Result := RightStr('Hello', 10);      // Returns: 'Hello'
         Result := RightStr('Hello', 0);       // Returns: ''
         Result := RightStr('', 5);          // Returns: ''
-    *)
+    }
     class function RightStr(const Text: string; Length: Integer): string; static;
     
-    (*
+    {
       @description Calculates the Levenshtein distance between two strings. This distance is the
                    minimum number of single-character edits (insertions, deletions, or substitutions)
                    required to change one string into the other.
@@ -852,10 +852,10 @@ type
         // b  2  1 1 2  <- D[2,3] = Min3(D[1,3]+1, D[2,2]+1, D[1,2]+cost(b,b)=0) = Min3(2+1, 1+1, 1+0) = 1
         // c  3  2 1 2  <- D[3,3] = Min3(D[2,3]+1, D[3,2]+1, D[2,2]+cost(c,b)=1) = Min3(1+1, 1+1, 1+1) = 2
         // The distance is 2. Example is correct.
-    *)
+    }
     class function LevenshteinDistance(const S1, S2: string): Integer; static;
     
-    (*
+    {
       @description Calculates a similarity ratio between two strings based on their Levenshtein distance.
                    The ratio is normalized to a value between 0.0 (completely different) and 1.0 (identical).
       
@@ -880,10 +880,10 @@ type
         Result := LevenshteinSimilarity('test', 'test');     // Returns: 1.0
         Result := LevenshteinSimilarity('test', '');        // Returns: 0.0
         // Result := LevenshteinSimilarity('', '');        // Raises EDivByZero
-    *)
+    }
     class function LevenshteinSimilarity(const S1, S2: string): Double; static;
     
-    (*
+    {
       @description Calculates the Hamming distance between two strings. This is the number of
                    positions at which the corresponding characters are different.
       
@@ -908,10 +908,10 @@ type
         Result := HammingDistance('test', 'Test');     // Returns: 1 (case-sensitive)
         Result := HammingDistance('short', 'longer');  // Returns: -1 (different lengths)
         Result := HammingDistance('', '');            // Returns: 0
-    *)
+    }
     class function HammingDistance(const S1, S2: string): Integer; static;
     
-    (*
+    {
       @description Calculates the Jaro similarity between two strings, a metric for measuring string similarity
                    based on matching characters and transpositions, particularly
                    suited for short strings like names.
@@ -937,10 +937,10 @@ type
         Result := JaroSimilarity('ABC', 'DEF');     // Returns 0.0 (no matching characters)
         Result := JaroSimilarity('', '');         // Returns 1.0
         Result := JaroSimilarity('A', '');          // Returns 0.0
-    *)
+    }
     class function JaroSimilarity(const S1, S2: string): Double; static;
     
-    (*
+    {
       @description Calculates the Jaro-Winkler similarity, an extension of Jaro similarity that
                    gives more weight to strings sharing a common prefix.
       
@@ -966,10 +966,10 @@ type
         Result := JaroWinklerSimilarity('TEST', 'TSET');    // Returns higher than Jaro due to 'T' prefix
         Result := JaroWinklerSimilarity('DIXON', 'DICKSON'); // Returns some similarity value
         Result := JaroWinklerSimilarity('', '');         // Returns 1.0
-    *)
+    }
     class function JaroWinklerSimilarity(const S1, S2: string): Double; static;
     
-    (*
+    {
       @description Finds the longest common subsequence (LCS) of two strings. A subsequence
                    maintains the relative order of characters but doesn't require them to be contiguous.
       
@@ -1015,10 +1015,10 @@ type
         Result := LongestCommonSubsequence('test', 'testing');   // Returns: 'test'
         Result := LongestCommonSubsequence('abc', 'def');       // Returns: ''
         Result := LongestCommonSubsequence('abc', '');          // Returns: ''
-    *)
+    }
     class function LongestCommonSubsequence(const S1, S2: string): string; static;
     
-    (*
+    {
       @description Calculates a similarity ratio between two strings based on the length of their
                    Longest Common Subsequence (LCS).
                    Formula: `Length(LCS) / Max(1, Length(S1), Length(S2))` (denominator adjusted to avoid division by zero).
@@ -1044,10 +1044,10 @@ type
         Result := LCSSimilarity('test', 'test');       // LCS='test', Length=4. MaxLen=4. Ratio = 1.0
         Result := LCSSimilarity('abc', 'def');       // LCS='', Length=0. MaxLen=3. Ratio = 0.0
         // Result := LCSSimilarity('', '');            // Raises EDivByZero
-    *)
+    }
     class function LCSSimilarity(const S1, S2: string): Double; static;
     
-    (*
+    {
       @description Determines if two strings are considered a "fuzzy match" based on a chosen
                    similarity algorithm and a threshold.
       
@@ -1084,12 +1084,12 @@ type
         
         // Using LCS (Method=2, Threshold=0.6)
         Result := IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2); // LCS Similarity = 0.625. Returns: True
-    *)
+    }
     class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; static;
     
-    (* -------------------- Case Conversion Variants -------------------- *)
+    { -------------------- Case Conversion Variants -------------------- }
     
-    (*
+    {
       @description Converts a string to Title Case, where the first letter of each word is
                    capitalized and the rest of the letters are lowercased. Words are delimited
                    by spaces, tabs, newlines, hyphens, periods, underscores, colons, semicolons,
@@ -1111,10 +1111,10 @@ type
         Result := ToTitleCase('first-name_last.name'); // Returns: 'First-Name_Last.Name'
         Result := ToTitleCase('multiple   spaces');  // Returns: 'Multiple   Spaces'
         Result := ToTitleCase('');                   // Returns: ''
-    *)
+    }
     class function ToTitleCase(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to camelCase format. The first word starts lowercase,
                    and subsequent words start with an uppercase letter, with all other letters
                    in lowercase. Words are identified using GetWords (alphanumeric sequences).
@@ -1139,10 +1139,10 @@ type
         Result := ToCamelCase('123 abc');            // Returns: '123Abc'
         Result := ToCamelCase('');                   // Returns: ''
         Result := ToCamelCase('---');                // Returns: ''
-    *)
+    }
     class function ToCamelCase(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to PascalCase (or UpperCamelCase) format. Each word starts
                    with an uppercase letter, with all other letters in lowercase. Words are
                    identified using GetWords (alphanumeric sequences). No separators are
@@ -1167,10 +1167,10 @@ type
         Result := ToPascalCase('123 abc');            // Returns: '123Abc'
         Result := ToPascalCase('');                   // Returns: ''
         Result := ToPascalCase('---');                // Returns: ''
-    *)
+    }
     class function ToPascalCase(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to snake_case format. All words are converted to lowercase
                    and joined by underscore characters ('_'). Words are identified using GetWords
                    (alphanumeric sequences).
@@ -1194,10 +1194,10 @@ type
         Result := ToSnakeCase('123 abc');            // Returns: '123_abc'
         Result := ToSnakeCase('');                   // Returns: ''
         Result := ToSnakeCase('---');                // Returns: ''
-    *)
+    }
     class function ToSnakeCase(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a string to kebab-case format. All words are converted to lowercase
                    and joined by hyphen characters ('-'). Words are identified using GetWords
                    (alphanumeric sequences).
@@ -1221,12 +1221,12 @@ type
         Result := ToKebabCase('123 abc');            // Returns: '123-abc'
         Result := ToKebabCase('');                   // Returns: ''
         Result := ToKebabCase('---');                // Returns: ''
-    *)
+    }
     class function ToKebabCase(const Text: string): string; static;
     
-    (* -------------------- String Validation Functions -------------------- *)
+    { -------------------- String Validation Functions -------------------- }
     
-    (*
+    {
       @description Checks if a string matches a common pattern for a valid email address.
       
       @usage Use to perform basic validation of email address input.
@@ -1248,10 +1248,10 @@ type
         Result := IsValidEmail('test@.com');       // Returns: False (missing domain name part)
         Result := IsValidEmail('test');            // Returns: False
         Result := IsValidEmail('');                // Returns: False
-    *)
+    }
     class function IsValidEmail(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Checks if a string matches common patterns for a valid URL (http, https, ftp, or www starting).
       
       @usage Use to perform basic validation of URL input.
@@ -1260,9 +1260,9 @@ type
       
       @returns True if the string matches one of the URL patterns, False otherwise.
       
-      @references Uses regex patterns for HTTP/HTTPS/FTP URLs and www-prefixed domains.
-               Allows alphanumeric characters, special chars (@:%._+~#=) in domain,
-               and query strings with alphanumeric chars and special chars (&/?=)
+      @references Uses regex patterns:
+                  `^(https?|ftp)://[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$`
+                  `^(www)\.[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$`
       
       @warning These regex patterns cover many common URLs but might not match all valid URL formats
                 (e.g., internationalized domain names, newer TLDs, file URLs, data URLs).
@@ -1277,10 +1277,10 @@ type
         Result := IsValidURL('example.com');               // Returns: False (needs protocol or www.)
         Result := IsValidURL('http://example');            // Returns: False (needs TLD)
         Result := IsValidURL('');                          // Returns: False
-    *)
+    }
     class function IsValidURL(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Checks if a string is a valid IPv4 or IPv6 address.
       
       @usage Use as a general IP address validator when either format is acceptable.
@@ -1298,10 +1298,10 @@ type
         Result := IsValidIP('::ffff:192.0.2.128'); // Returns: True
         Result := IsValidIP('invalid-ip');       // Returns: False
         Result := IsValidIP('');                 // Returns: False
-    *)
+    }
     class function IsValidIP(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Checks if a string is a valid IPv4 address in standard dot-decimal notation.
       
       @usage Use to validate input specifically expected to be an IPv4 address.
@@ -1323,10 +1323,10 @@ type
         Result := IsValidIPv4('192.168.1');    // Returns: False (not enough parts)
         Result := IsValidIPv4('::1');          // Returns: False (IPv6 format)
         Result := IsValidIPv4('');             // Returns: False
-    *)
+    }
     class function IsValidIPv4(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Checks if a string is a valid IPv6 address, including standard, compressed,
                    and IPv4-mapped formats.
       
@@ -1351,10 +1351,10 @@ type
         Result := IsValidIPv6('2001:db8::g');                          // Returns: False (invalid hex 'g')
         Result := IsValidIPv6('192.168.1.1');                          // Returns: False (IPv4 format)
         Result := IsValidIPv6('');                                     // Returns: False
-    *)
+    }
     class function IsValidIPv6(const Text: string): Boolean; static;
     
-    (*
+    {
       @description Checks if a string represents a valid date according to a specified format string.
                    It attempts to parse the string based on the positions of 'dd', 'mm', 'yyyy'
                    in the format string and validates the resulting day, month, and year values.
@@ -1386,12 +1386,12 @@ type
         Result := IsValidDate('October 26, 2023', 'mmmm dd, yyyy'); // Returns: False (only 'dd', 'mm', 'yyyy' supported)
         Result := IsValidDate('20231026', 'yyyymmdd');   // Returns: False (assumes non-digit separators)
         Result := IsValidDate('', 'yyyy-mm-dd');       // Returns: False
-    *)
+    }
     class function IsValidDate(const Text, Format: string): Boolean; static;
     
-    (* -------------------- String Transformation and Formatting -------------------- *)
+    { -------------------- String Transformation and Formatting -------------------- }
     
-    (*
+    {
       @description Truncates a string to a maximum length, appending an ellipsis (...) if truncation occurs.
       
       @usage Use to shorten long strings for display in limited space, indicating that content has been cut off.
@@ -1414,10 +1414,10 @@ type
         Result := Truncate('Tiny', 3);                          // Returns: '...' (MaxLength <= Ellipsis length)
         Result := Truncate('Tiny', 2);                          // Returns: '...' (Result length is Ellipsis length)
         Result := Truncate('', 10);                             // Returns: ''
-    *)
+    }
     class function Truncate(const Text: string; MaxLength: Integer; const Ellipsis: string = '...'): string; static;
     
-    (*
+    {
       @description Formats a file size (in bytes) into a human-readable string using binary
                    prefixes (KB, MB, GB, TB). Uses 1024 as the base.
       
@@ -1438,10 +1438,10 @@ type
         Result := FormatFileSize(1500000000); // Returns: '1.40 GB' (approx)
         Result := FormatFileSize(2199023255552); // Returns: '2.00 TB' (approx)
         Result := FormatFileSize(0);         // Returns: '0 B'
-    *)
+    }
     class function FormatFileSize(Size: Int64): string; static;
     
-    (*
+    {
       @description Formats an integer (Int64) by inserting a thousand separator character.
                    Only formats non-negative numbers with more than 3 digits.
       
@@ -1462,10 +1462,10 @@ type
         Result := FormatNumber(1234, '.');     // Returns: '1.234'
         Result := FormatNumber(0);             // Returns: '0'
         Result := FormatNumber(-12345);        // Returns: '-12345' (not formatted)
-    *)
+    }
     class function FormatNumber(const Value: Int64; ThousandSeparator: Char = ','): string; static;
     
-    (*
+    {
       @description Formats a floating-point number (Double) with specified decimal places,
                    decimal separator, and thousand separator for the integer part. Includes rounding.
       
@@ -1491,12 +1491,12 @@ type
         Result := FormatFloat(0.12, 2);             // Returns: '0.12'
         Result := FormatFloat(999.999, 2);          // Returns: '1,000.00' (rounding carries over)
         Result := FormatFloat(1234, 0);             // Returns: '1,234' (no decimals)
-    *)
+    }
     class function FormatFloat(const Value: Double; Decimals: Integer = 2; DecimalSeparator: Char = '.'; ThousandSeparator: Char = ','): string; static;
     
-    (* -------------------- String Splitting and Joining -------------------- *)
+    { -------------------- String Splitting and Joining -------------------- }
     
-    (*
+    {
       @description Joins an array of strings into a single string, inserting a delimiter between elements.
       
       @usage Use to combine multiple string pieces into one, for example, creating a comma-separated list
@@ -1520,10 +1520,10 @@ type
         
         SetLength(Arr, 0);
         Result := Join(Arr, ',');   // Returns: ''
-    *)
+    }
     class function Join(const Strings: TStringDynArray; const Delimiter: string): string; static;
     
-    (*
+    {
       @description Splits a string into an array of substrings based on a specified delimiter.
                    Offers options to limit the number of splits and remove empty entries.
       
@@ -1555,12 +1555,12 @@ type
         Result := Split('', ','); // Returns: ['']
         Result := Split('', ',', 0, True); // Returns: []
         Result := Split('test', 'x'); // Returns: ['test']
-    *)
+    }
     class function Split(const Text, Delimiter: string; MaxSplit: Integer = 0; RemoveEmptyEntries: Boolean = False): TStringDynArray; static;
     
-    (* -------------------- Phonetic Algorithms -------------------- *)
+    { -------------------- Phonetic Algorithms -------------------- }
     
-    (*
+    {
       @description Generates a Soundex code for a given string (typically a name). Soundex is a
                    phonetic algorithm indexing names by their English pronunciation sound.
                    The code consists of the first letter followed by three digits representing
@@ -1593,10 +1593,10 @@ type
         Result := Soundex('Gauss');   // Returns: 'G200'
         Result := Soundex('A');       // Returns: 'A000'
         Result := Soundex('');        // Returns: ''
-    *)
+    }
     class function Soundex(const Text: string): string; static;
     
-    (*
+    {
       @description Generates a Metaphone code for a given string. Metaphone is a phonetic algorithm
                    designed to encode English words based on their pronunciation, improving on Soundex.
       
@@ -1624,12 +1624,12 @@ type
         Result := Metaphone('tough');     // Returns: 'TF' (GH -> F) - Let's check rules. GH non-initial silent. Should be 'T'. Implementation has `Skip := True`. Correct.
         Result := Metaphone('Xavier');    // Returns: 'SFR' (Initial X -> S)
         Result := Metaphone('');          // Returns: ''
-    *)
+    }
     class function Metaphone(const Text: string): string; static;
     
-    (* -------------------- Text Analysis -------------------- *)
+    { -------------------- Text Analysis -------------------- }
     
-    (*
+    {
       @description Counts the number of words in a text. Words are identified as sequences of
                    alphanumeric characters using the GetWords function.
       
@@ -1649,10 +1649,10 @@ type
         Result := CountWords('OneWord');                   // Returns: 1
         Result := CountWords('   ');                       // Returns: 0
         Result := CountWords('');                          // Returns: 0
-    *)
+    }
     class function CountWords(const Text: string): Integer; static;
     
-    (*
+    {
       @description Calculates the Flesch-Kincaid Reading Ease score for a given text. This score
                    estimates the readability of English text, with higher scores indicating easier
                    readability (typically on a 0-100 scale).
@@ -1683,10 +1683,10 @@ type
         Result := FleschKincaidReadability(Text2); // Should be lower (harder) -> ~34.2
         
         Result := FleschKincaidReadability(''); // Returns: 0.0
-    *)
+    }
     class function FleschKincaidReadability(const Text: string): Double; static;
     
-    (*
+    {
       @description Generates n-grams (sequences of N consecutive words) from a text.
       
       @usage Use in natural language processing (NLP) for tasks like text analysis, feature
@@ -1722,12 +1722,12 @@ type
         
         Result := GenerateNGrams('test', 0); // N <= 0
         // Length(Result) = 0
-    *)
+    }
     class function GenerateNGrams(const Text: string; N: Integer): TStringDynArray; static;
     
-    (* -------------------- Encoding/Decoding Functions -------------------- *)
+    { -------------------- Encoding/Decoding Functions -------------------- }
     
-    (*
+    {
       @description Encodes a string for safe inclusion in HTML by replacing special characters
                    ('<', '>', '&', '"', ''') with their corresponding HTML entities.
       
@@ -1747,10 +1747,10 @@ type
         Result := HTMLEncode('Data & Results');          // Returns: 'Data &amp; Results'
         Result := HTMLEncode('Regular text');            // Returns: 'Regular text'
         Result := HTMLEncode('');                        // Returns: ''
-    *)
+    }
     class function HTMLEncode(const Text: string): string; static;
     
-    (*
+    {
       @description Decodes a string containing common HTML entities back into their original characters.
                    Specifically decodes &lt;, &gt;, &amp;, &quot;, &#39;, and &nbsp;.
       
@@ -1772,10 +1772,10 @@ type
         Result := HTMLDecode('Regular text');                      // Returns: 'Regular text'
         Result := HTMLDecode('&nbsp;');                            // Returns: ' '
         Result := HTMLDecode('');                                  // Returns: ''
-    *)
+    }
     class function HTMLDecode(const Text: string): string; static;
     
-    (*
+    {
       @description Encodes a string for safe inclusion in a URL component (like a query parameter value)
                    by percent-encoding unsafe characters. Spaces are encoded as '+'.
       
@@ -1799,10 +1799,10 @@ type
         Result := URLEncode('data=value&more'); // Returns: 'data%3Dvalue%26more'
         Result := URLEncode('safe-chars_.~');   // Returns: 'safe-chars_.~'
         Result := URLEncode('');                // Returns: ''
-    *)
+    }
     class function URLEncode(const Text: string): string; static;
     
-    (*
+    {
       @description Decodes a URL-encoded string (specifically, application/x-www-form-urlencoded format)
                    back into its original form. Converts '+' back to space and %XX hex sequences
                    to their corresponding characters.
@@ -1824,10 +1824,10 @@ type
         Result := URLDecode('safe-chars_.~');   // Returns: 'safe-chars_.~'
         Result := URLDecode('invalid%ZZsequence'); // Returns: 'invalid%ZZsequence' (assuming %ZZ fails StrToInt)
         Result := URLDecode('');                // Returns: ''
-    *)
+    }
     class function URLDecode(const Text: string): string; static;
     
-    (*
+    {
       @description Encodes binary/text data into Base64 representation using the standard
                    Base64 alphabet (RFC 4648) with '=' padding.
       
@@ -1843,10 +1843,10 @@ type
       @example
         Result := Encode64('Hello'); // Returns: 'SGVsbG8='
         Result := Encode64('');      // Returns: ''
-    *)
+    }
     class function Encode64(const Text: string): string; static;
     
-    (*
+    {
       @description Decodes a Base64-encoded string (RFC 4648, standard alphabet) back to
                    its original byte sequence represented as a Pascal string.
       
@@ -1862,12 +1862,12 @@ type
       @example
         Result := Decode64('SGVsbG8='); // Returns: 'Hello'
         Result := Decode64('');         // Returns: ''
-    *)
+    }
     class function Decode64(const Base64Text: string): string; static;
     
-    (* -------------------- Number Conversions -------------------- *)
+    { -------------------- Number Conversions -------------------- }
     
-    (*
+    {
       @description Converts a positive integer into its Roman numeral representation.
       
       @usage Use for displaying numbers in Roman numeral format, typically for stylistic purposes
@@ -1890,10 +1890,10 @@ type
         Result := ToRoman(3999); // Returns: 'MMMCMXCIX'
         Result := ToRoman(0);    // Returns: ''
         Result := ToRoman(4000); // Returns: ''
-    *)
+    }
     class function ToRoman(Value: Integer): string; static;
     
-    (*
+    {
       @description Converts a Roman numeral string into its integer value.
       
       @usage Use to parse Roman numerals back into standard integer values.
@@ -1919,10 +1919,10 @@ type
         Result := FromRoman('Invalid'); // Returns: 0 (contains invalid char 'n')
         Result := FromRoman('IC');      // Returns: 99 (parses as 100 - 1)
         Result := FromRoman('');        // Returns: 0
-    *)
+    }
     class function FromRoman(const RomanNumeral: string): Integer; static;
     
-    (*
+    {
       @description Converts an integer into its ordinal string representation (e.g., 1 -> '1st', 2 -> '2nd').
       
       @usage Use for displaying numbers as ordinals in text (e.g., '1st place', '2nd attempt').
@@ -1946,10 +1946,10 @@ type
         Result := ToOrdinal(102);  // Returns: '102nd'
         Result := ToOrdinal(0);    // Returns: '0th'
         Result := ToOrdinal(-5);   // Returns: '-5th'
-    *)
+    }
     class function ToOrdinal(Value: Integer): string; static;
     
-    (*
+    {
       @description Converts an integer (Int64) into its English word representation.
       
       @usage Use for check writing, formal documents, or anywhere a number needs to be spelled out.
@@ -1978,12 +1978,12 @@ type
         Result := NumberToWords(1000000000); // Returns: 'one billion'
         Result := NumberToWords(0);          // Returns: 'zero'
         Result := NumberToWords(-42);        // Returns: 'negative forty-two'
-    *)
+    }
     class function NumberToWords(Value: Int64): string; static;
     
-    (* -------------------- Encoding/Decoding Functions -------------------- *) // Duplicate section header
+    { -------------------- Encoding/Decoding Functions -------------------- } // Duplicate section header
     
-    (*
+    {
       @description Converts a string into its hexadecimal representation, where each character
                    is represented by two hexadecimal digits (0-9, A-F).
       
@@ -2003,10 +2003,10 @@ type
         Result := HexEncode('123');   // Returns: '313233'
         Result := HexEncode(#$0A#$FF); // Returns: '0AFF'
         Result := HexEncode('');      // Returns: ''
-    *)
+    }
     class function HexEncode(const Text: string): string; static;
     
-    (*
+    {
       @description Converts a hexadecimal string (pairs of hex digits) back into its original
                    string representation by interpreting each pair as a character code.
       
@@ -2030,13 +2030,13 @@ type
         Result := HexDecode('48 65 6C'); // Returns: 'HeL' (skips space, processes '48', skips ' 6', processes '6C') - Let's recheck. It checks pairs `^[0-9A-Fa-f]{2}$`. '48' ok. ' 6' fails. '65' ok. ' 6' fails. '6C' ok. Result should be 'HeL'. Let's trace: I=1, Pair='48', Add Chr(72)='H'. I=3. Pair='65', Add Chr(101)='e'. I=5. Pair='6C', Add Chr(108)='l'. I=7. Pair='6F', Add Chr(111)='o'. Result 'Hello'. The example '48 65 6C' needs re-evaluation. I=1, Pair='48', Add 'H'. I=3. Pair=' 6', Fails regex. I=4. Pair='65', Add 'e'. I=6. Pair=' 6', Fails regex. I=7. Pair='6C', Add 'L'. I=9. End. Result: 'HeL'. Example corrected.
         Result := HexDecode('48656C6C6'); // Returns: '' (odd length)
         Result := HexDecode('');         // Returns: ''
-    *)
+    }
     class function HexDecode(const HexText: string): string; static;
   end;
 
 implementation
 
-(* TStringKit *)
+{ TStringKit }
 
 class function TStringKit.IsWhiteSpace(const C: Char): Boolean;
 begin
