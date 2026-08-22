@@ -1,1 +1,0 @@
-Error: Cannot find path 'src/StringKit.pas' because it does not exist.
