@@ -14,6 +14,9 @@ For the input `a b+c`:
 
 `PercentDecode` preserves a literal `+`. `FormURLDecode` and legacy `URLDecode` interpret `+` as a space. Use `PercentEncode` for URI components and `FormURLEncode` for `application/x-www-form-urlencoded` data.
 
+> [!WARNING]
+> `PercentDecode` and `FormURLDecode` do not have identical `+` semantics. Choose the decoder that matches the encoder and transport format.
+
 The [URL encoding recipe](../start/recipes.md#form-url-encoding-and-percent-encoding) is compiled and checks both output lines.
 
 ## Hex and Base64

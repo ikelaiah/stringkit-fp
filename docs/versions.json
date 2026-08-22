@@ -1,9 +1,13 @@
 {
   "schema_version": 1,
-  "current": "1.9.1",
+  "current": "1.9.2",
   "site_url": "https://ikelaiah.github.io/stringkit-fp",
   "repository_url": "https://github.com/ikelaiah/stringkit-fp",
   "versions": [
+    {
+      "release": "1.9.2",
+      "source_ref": "v1.9.2"
+    },
     {
       "release": "1.9.1",
       "source_ref": "v1.9.1"

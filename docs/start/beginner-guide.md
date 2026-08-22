@@ -6,6 +6,9 @@
 
 Start with the static API. The optional string helper is a second spelling of most string-first calls, not a different implementation.
 
+> [!TIP]
+> Keep `StringKit` as your first import. Add `StringKitHelper` only when you specifically prefer instance-style calls.
+
 ## 2. Add StringKit-FP to a project
 
 For an FPC project, put `src/` on the unit search path and add `StringKit` to `uses`.
@@ -55,6 +58,9 @@ Use `ToCamelCase`, `ToPascalCase`, `ToSnakeCase`, or `ToKebabCase` when converti
 ## 8. Validate common input
 
 `IsValidEmail`, `IsValidURL`, `IsValidIPv4`, `IsValidIPv6`, and `IsValidDate` are practical syntax checks. They do not prove that an address exists, a URL is reachable, or input meets every RFC edge case. See [Validation](../guides/validation.md).
+
+> [!IMPORTANT]
+> `SubString` follows Pascal's 1-based indexing. Check [Contracts and limitations](../reference/contracts-and-limitations.md) before translating zero-based examples from another language.
 
 ## 9. Encode text for the right context
 

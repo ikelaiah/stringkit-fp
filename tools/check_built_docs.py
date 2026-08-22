@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from functools import lru_cache
 from html.parser import HTMLParser
 from pathlib import Path
@@ -16,18 +17,28 @@ class PageParser(HTMLParser):
         super().__init__()
         self.links: list[str] = []
         self.identifiers: set[str] = set()
+        self.duplicate_identifiers: set[str] = set()
         self.release_values: list[str] = []
+        self.version_targets: list[str] = []
+        self.title_count = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
         if values.get("id"):
-            self.identifiers.add(str(values["id"]))
+            identifier = str(values["id"])
+            if identifier in self.identifiers:
+                self.duplicate_identifiers.add(identifier)
+            self.identifiers.add(identifier)
         if tag in {"a", "link"} and values.get("href"):
             self.links.append(str(values["href"]))
         if tag in {"img", "script"} and values.get("src"):
             self.links.append(str(values["src"]))
         if tag == "meta" and values.get("name") == "stringkit-release" and values.get("content"):
             self.release_values.append(str(values["content"]))
+        if tag == "option" and values.get("value"):
+            self.version_targets.append(str(values["value"]))
+        if tag == "title":
+            self.title_count += 1
 
 
 @lru_cache(maxsize=None)
@@ -58,9 +69,20 @@ def local_target(page: Path, raw_link: str, site: Path) -> tuple[Path | None, st
 def check_page(page: Path, site: Path, release: str) -> list[str]:
     errors: list[str] = []
     parsed = page_data(page)
+    source = page.read_text(encoding="utf-8")
     if parsed.release_values != [release]:
         errors.append(f"{page}: release metadata {parsed.release_values!r}, expected [{release!r}]")
+    if parsed.title_count != 1:
+        errors.append(f"{page}: expected exactly one page title")
+    for identifier in sorted(parsed.duplicate_identifiers):
+        errors.append(f"{page}: duplicate id: {identifier}")
+    if re.search(r"(?:^|[\"'\s])(?:file://|[A-Za-z]:[\\/])", source, re.IGNORECASE):
+        errors.append(f"{page}: contains an absolute local filesystem path")
     for link in parsed.links:
+        split = urlsplit(link)
+        if split.scheme.lower() not in {"", "http", "https", "mailto"}:
+            errors.append(f"{page}: unsafe link: {link}")
+            continue
         target, fragment = local_target(page, link, site)
         if target is None:
             if fragment == "escapes built site":
@@ -71,6 +93,10 @@ def check_page(page: Path, site: Path, release: str) -> list[str]:
             continue
         if fragment and target.suffix.lower() == ".html" and fragment not in page_data(target).identifiers:
             errors.append(f"{page}: missing link anchor: {link}")
+    for target_value in parsed.version_targets:
+        target, _fragment = local_target(page, target_value, site)
+        if target is None or not target.is_file():
+            errors.append(f"{page}: missing version target: {target_value}")
     return errors
 
 
@@ -108,6 +134,9 @@ def check_site(site: Path) -> list[str]:
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{directory}: invalid release output: {exc}")
             continue
+        for asset in ("assets/site.css", "assets/site.js", "search-index.js"):
+            if not (directory / asset).is_file():
+                errors.append(f"{directory}: missing required asset: {asset}")
         pages = sorted(directory.rglob("*.html"))
         if not pages:
             errors.append(f"{directory}: no HTML pages")

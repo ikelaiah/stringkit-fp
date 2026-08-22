@@ -52,6 +52,28 @@ class CheckBuiltDocsTests(unittest.TestCase):
             page.write_text(page.read_text(encoding="utf-8").replace('guide.html', 'missing.html'), encoding="utf-8")
             self.assertTrue(any("missing link target" in error for error in check_site(site)))
 
+    def test_reports_duplicate_ids_and_unsafe_links(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            page = site / "1.9.1" / "guide.html"
+            page.write_text(
+                page.read_text(encoding="utf-8").replace(
+                    "</main>",
+                    '<p id="guide">Duplicate identifier</p><a href="javascript:alert(1)">Unsafe</a></main>',
+                ),
+                encoding="utf-8",
+            )
+            errors = check_site(site)
+            self.assertTrue(any("duplicate id" in error for error in errors))
+            self.assertTrue(any("unsafe link" in error for error in errors))
+
+    def test_requires_the_documentation_assets_and_version_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            (site / "1.9.1" / "assets" / "site.js").unlink()
+            errors = check_site(site)
+            self.assertTrue(any("missing required asset" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

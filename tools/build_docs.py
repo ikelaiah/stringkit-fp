@@ -17,10 +17,13 @@ from urllib.parse import quote, urlsplit
 
 
 OUTPUT_MARKER = ".stringkit-fp-docs-output"
+DOC_ASSETS = Path(__file__).resolve().parent / "docs_assets"
 LINK_PATTERN = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)]+)\)")
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 FENCE_PATTERN = re.compile(r"^```([^`]*)\s*$")
 LIST_PATTERN = re.compile(r"^\s*([-*+]|\d+\.)\s+(.+)$")
+ADMONITION_PATTERN = re.compile(r"^\[!(NOTE|TIP|IMPORTANT|WARNING)\]\s*$", re.IGNORECASE)
+SAFE_EXTERNAL_SCHEMES = {"http", "https", "mailto"}
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,47 @@ class SiteConfig:
     repository_url: str
     site_url: str
     versions: list[dict[str, str]]
+
+
+@dataclass(frozen=True)
+class NavigationPage:
+    path: str
+    title: str
+    section: str
+
+
+@dataclass(frozen=True)
+class NavigationSection:
+    title: str
+    pages: tuple[NavigationPage, ...]
+
+
+@dataclass(frozen=True)
+class ProjectLink:
+    title: str
+    url: str | None = None
+    project_path: str | None = None
+
+
+@dataclass(frozen=True)
+class DocumentationLayout:
+    site_title: str
+    description: str
+    navigation: tuple[NavigationSection, ...]
+    project_links: tuple[ProjectLink, ...]
+    homepage: dict[str, object]
+    legacy: bool = False
+
+    @property
+    def pages(self) -> tuple[NavigationPage, ...]:
+        return tuple(page for section in self.navigation for page in section.pages)
+
+
+@dataclass(frozen=True)
+class RenderedDocument:
+    body: str
+    headings: tuple[tuple[int, str, str], ...]
+    text: str
 
 
 def load_config(versions_path: Path, release: str | None = None) -> SiteConfig:
@@ -52,34 +96,58 @@ def load_config(versions_path: Path, release: str | None = None) -> SiteConfig:
             source_ref=str(entry["source_ref"]),
             repository_url=str(data["repository_url"]).rstrip("/"),
             site_url=str(data["site_url"]).rstrip("/"),
-            versions=[
-                {"release": str(item["release"]), "source_ref": str(item["source_ref"])}
-                for item in versions
-            ],
+            versions=[{"release": str(item["release"]), "source_ref": str(item["source_ref"])} for item in versions],
         )
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid version metadata {versions_path}: {exc}") from exc
 
 
 def slug(value: str) -> str:
+    value = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", value)
     value = re.sub(r"[`*_]", "", value).strip().lower()
     value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
     return value or "section"
 
 
-def markdown_anchors(path: Path) -> set[str]:
-    anchors: set[str] = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
+def plain_markdown(value: str) -> str:
+    return re.sub(r"[`*_]", "", LINK_PATTERN.sub(r"\1", value)).strip()
+
+
+def unique_identifier(title: str, known: set[str]) -> str:
+    base = slug(title)
+    identifier = base
+    suffix = 2
+    while identifier in known:
+        identifier = f"{base}-{suffix}"
+        suffix += 1
+    known.add(identifier)
+    return identifier
+
+
+def heading_entries(markdown: str) -> list[tuple[int, str, str]]:
+    entries: list[tuple[int, str, str]] = []
+    identifiers: set[str] = set()
+    in_fence = False
+    for line in markdown.splitlines():
+        if FENCE_PATTERN.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         match = HEADING_PATTERN.match(line)
         if match:
-            base = slug(match.group(2))
-            anchor = base
-            suffix = 2
-            while anchor in anchors:
-                anchor = f"{base}-{suffix}"
-                suffix += 1
-            anchors.add(anchor)
-    return anchors
+            title = plain_markdown(match.group(2))
+            entries.append((len(match.group(1)), title, unique_identifier(title, identifiers)))
+    return entries
+
+
+def markdown_anchors(path: Path) -> set[str]:
+    return {identifier for _level, _title, identifier in heading_entries(path.read_text(encoding="utf-8"))}
+
+
+def is_unsafe_url(target: str) -> bool:
+    scheme = urlsplit(target).scheme.lower()
+    return bool(scheme and scheme not in SAFE_EXTERNAL_SCHEMES)
 
 
 def is_external(target: str) -> bool:
@@ -100,11 +168,120 @@ def relative_url(source: Path, target: Path) -> str:
     return os.path.relpath(target, source).replace(os.sep, "/")
 
 
+def safe_document_path(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError(f"{label} must be a non-empty slash-separated path")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts or path.suffix.lower() != ".md":
+        raise ValueError(f"{label} must name a Markdown file within docs")
+    return path.as_posix()
+
+
+def legacy_navigation(source: Path) -> tuple[NavigationSection, ...]:
+    grouped: dict[str, list[NavigationPage]] = {"Getting Started": [], "Guides": [], "Reference": []}
+    for document in sorted(source.rglob("*.md")):
+        relative = document.relative_to(source).as_posix()
+        if relative == "index.md" or relative.startswith("start/"):
+            section = "Getting Started"
+        elif relative.startswith("guides/"):
+            section = "Guides"
+        elif relative.startswith("reference/"):
+            section = "Reference"
+        else:
+            section = "Documentation"
+            grouped.setdefault(section, [])
+        title = next((title for level, title, _anchor in heading_entries(document.read_text(encoding="utf-8")) if level == 1), document.stem)
+        grouped[section].append(NavigationPage(relative, title, section))
+    return tuple(NavigationSection(title, tuple(pages)) for title, pages in grouped.items() if pages)
+
+
+def load_layout(source: Path, config: SiteConfig) -> DocumentationLayout:
+    layout_path = source / "layout.json"
+    try:
+        data = json.loads(layout_path.read_text(encoding="utf-8"))
+        schema = data.get("schema_version")
+        if schema == 1:
+            if str(data.get("release")) != config.release:
+                raise ValueError("release must match the selected version")
+            required = data.get("required_pages", [])
+            if not isinstance(required, list):
+                raise ValueError("required_pages must be an array of paths")
+            missing = [str(page) for page in required if not (source / str(page)).is_file()]
+            if missing:
+                raise ValueError(f"missing required documentation page(s): {', '.join(missing)}")
+            return DocumentationLayout("StringKit-FP documentation", "Practical StringKit-FP documentation for Free Pascal and Lazarus.", legacy_navigation(source), tuple(), {}, legacy=True)
+        if schema != 2:
+            raise ValueError("schema_version must be 1 or 2")
+        if str(data.get("release")) != config.release:
+            raise ValueError("release must match the selected version")
+        site_title = str(data.get("site_title", "")).strip()
+        description = str(data.get("description", "")).strip()
+        if not site_title or not description:
+            raise ValueError("site_title and description are required")
+        raw_navigation = data.get("navigation")
+        if not isinstance(raw_navigation, list) or not raw_navigation:
+            raise ValueError("navigation must be a non-empty array")
+        navigation: list[NavigationSection] = []
+        paths: set[str] = set()
+        for section in raw_navigation:
+            if not isinstance(section, dict) or not isinstance(section.get("title"), str):
+                raise ValueError("each navigation section needs a title")
+            title = section["title"].strip()
+            raw_pages = section.get("pages")
+            if not title or not isinstance(raw_pages, list) or not raw_pages:
+                raise ValueError(f"navigation section {title!r} needs pages")
+            pages: list[NavigationPage] = []
+            for item in raw_pages:
+                if not isinstance(item, dict) or not isinstance(item.get("title"), str):
+                    raise ValueError(f"navigation section {title!r} has an invalid page")
+                path = safe_document_path(item.get("path"), "navigation page path")
+                if path in paths:
+                    raise ValueError(f"navigation page appears more than once: {path}")
+                if not (source / path).is_file():
+                    raise ValueError(f"navigation page does not exist: {path}")
+                paths.add(path)
+                pages.append(NavigationPage(path, item["title"].strip(), title))
+            navigation.append(NavigationSection(title, tuple(pages)))
+        documents = {path.relative_to(source).as_posix() for path in source.rglob("*.md")}
+        if paths != documents:
+            missing = sorted(documents - paths)
+            extra = sorted(paths - documents)
+            detail = [f"missing navigation entries: {', '.join(missing)}" if missing else "", f"unknown navigation entries: {', '.join(extra)}" if extra else ""]
+            raise ValueError("; ".join(item for item in detail if item))
+        required = data.get("required_pages", [])
+        if not isinstance(required, list):
+            raise ValueError("required_pages must be an array of paths")
+        required_paths = {safe_document_path(page, "required page") for page in required}
+        if required_paths != paths:
+            raise ValueError("required_pages must match the navigation pages")
+        project_links: list[ProjectLink] = []
+        for item in data.get("project", []):
+            if not isinstance(item, dict) or not isinstance(item.get("title"), str):
+                raise ValueError("project links need a title")
+            url = item.get("url")
+            project_path = item.get("project_path")
+            if bool(url) == bool(project_path):
+                raise ValueError("project links need exactly one of url or project_path")
+            if url is not None and (not isinstance(url, str) or is_unsafe_url(url) or not is_external(url)):
+                raise ValueError("project link url must be a safe absolute URL")
+            if project_path is not None and (not isinstance(project_path, str) or not project_path or Path(project_path).is_absolute() or ".." in Path(project_path).parts):
+                raise ValueError("project_path must stay within the repository")
+            project_links.append(ProjectLink(item["title"].strip(), url, project_path))
+        homepage = data.get("homepage", {})
+        if not isinstance(homepage, dict):
+            raise ValueError("homepage must be an object")
+        return DocumentationLayout(site_title, description, tuple(navigation), tuple(project_links), homepage)
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid documentation layout {layout_path}: {exc}") from exc
+
+
 def validate_source_links(source: Path, documents: list[Path], project_root: Path) -> None:
     document_set = {path.resolve() for path in documents}
     for document in documents:
         for _label, raw_target in LINK_PATTERN.findall(document.read_text(encoding="utf-8")):
             target = raw_target.strip()
+            if is_unsafe_url(target):
+                raise ValueError(f"unsafe link in {document}: {target}")
             if is_external(target):
                 continue
             relative_path, fragment = split_target(target)
@@ -115,95 +292,59 @@ def validate_source_links(source: Path, documents: list[Path], project_root: Pat
                 raise ValueError(f"broken internal link in {document}: {target}") from exc
             if not candidate.is_file():
                 raise ValueError(f"broken internal link in {document}: {target}")
-            if (
-                candidate.suffix.lower() == ".md"
-                and candidate.is_relative_to(source.resolve())
-                and candidate not in document_set
-            ):
+            if candidate.suffix.lower() == ".md" and candidate.is_relative_to(source.resolve()) and candidate not in document_set:
                 raise ValueError(f"broken internal link in {document}: {target}")
-            if (
-                fragment
-                and candidate.suffix.lower() == ".md"
-                and candidate.is_relative_to(source.resolve())
-                and fragment not in markdown_anchors(candidate)
-            ):
+            if fragment and candidate.suffix.lower() == ".md" and candidate.is_relative_to(source.resolve()) and fragment not in markdown_anchors(candidate):
                 raise ValueError(f"broken internal link anchor in {document}: {target}")
 
 
-def ensure_layout(source: Path, config: SiteConfig) -> None:
-    layout_path = source / "layout.json"
-    try:
-        layout = json.loads(layout_path.read_text(encoding="utf-8"))
-        if layout.get("schema_version") != 1:
-            raise ValueError("schema_version must be 1")
-        if str(layout.get("release")) != config.release:
-            raise ValueError("release must match versions.json current")
-        required = layout.get("required_pages", [])
-        if not isinstance(required, list) or not all(isinstance(item, str) for item in required):
-            raise ValueError("required_pages must be an array of paths")
-        missing = [page for page in required if not (source / page).is_file()]
-        if missing:
-            raise ValueError(f"missing required documentation page(s): {', '.join(missing)}")
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
-        raise ValueError(f"invalid documentation layout {layout_path}: {exc}") from exc
+def source_url(config: SiteConfig, project_path: str) -> str:
+    return f"{config.repository_url}/blob/{quote(config.source_ref, safe='')}/{quote(project_path.replace(os.sep, '/'), safe='/')}"
 
 
-def link_resolver(
-    document: Path,
-    html_page: Path,
-    source: Path,
-    output: Path,
-    project_root: Path,
-    config: SiteConfig,
-):
+def link_resolver(document: Path, html_page: Path, source: Path, output: Path, project_root: Path, config: SiteConfig):
     def resolve(raw_target: str) -> str:
         target = raw_target.strip()
+        if is_unsafe_url(target):
+            return "#"
         if is_external(target):
             return target
         relative_path, fragment = split_target(target)
         candidate = (document.parent / relative_path).resolve() if relative_path else document.resolve()
         if candidate.suffix.lower() == ".md" and candidate.is_relative_to(source.resolve()):
-            generated = output / candidate.relative_to(source).with_suffix(".html")
-            href = relative_url(html_page.parent, generated)
+            href = relative_url(html_page.parent, output / candidate.relative_to(source).with_suffix(".html"))
         elif candidate == document.resolve() and not relative_path:
             href = ""
         else:
-            location = project_relative(candidate, project_root)
-            href = f"{config.repository_url}/blob/{quote(config.source_ref, safe='')}/{quote(location, safe='/')}"
+            href = source_url(config, project_relative(candidate, project_root))
         return href + (f"#{fragment}" if fragment else "")
-
     return resolve
-
-
-def render_inline(text: str, resolve_link) -> str:
-    tokens: list[str] = []
-
-    def stash(value: str) -> str:
-        tokens.append(value)
-        return f"\x00{len(tokens) - 1}\x00"
-
-    def render_link(match: re.Match[str]) -> str:
-        label, target = match.groups()
-        return stash(
-            f'<a href="{html.escape(resolve_link(target), quote=True)}">'
-            f"{render_inline_plain(label)}</a>"
-        )
-
-    rendered = LINK_PATTERN.sub(render_link, text)
-    rendered = html.escape(rendered)
-    rendered = re.sub(r"`([^`]+)`", lambda match: f"<code>{html.escape(match.group(1))}</code>", rendered)
-    rendered = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", rendered)
-    rendered = re.sub(r"(?<!\*)\*([^*]+)\*", r"<em>\1</em>", rendered)
-    for index, token in enumerate(tokens):
-        rendered = rendered.replace(f"\x00{index}\x00", token)
-    return rendered
 
 
 def render_inline_plain(text: str) -> str:
     result = html.escape(text)
     result = re.sub(r"`([^`]+)`", r"<code>\1</code>", result)
     result = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", result)
-    return result
+    return re.sub(r"(?<!\*)\*([^*]+)\*", r"<em>\1</em>", result)
+
+
+def render_inline(text: str, resolve_link) -> str:
+    tokens: list[str] = []
+    def stash(value: str) -> str:
+        tokens.append(value)
+        return f"\x00{len(tokens) - 1}\x00"
+    def render_link(match: re.Match[str]) -> str:
+        label, target = match.groups()
+        href = resolve_link(target)
+        external_class = ' class="external-link"' if is_external(href) and not href.startswith("#") else ""
+        return stash(f'<a{external_class} href="{html.escape(href, quote=True)}">{render_inline_plain(label)}</a>')
+    rendered = html.escape(LINK_PATTERN.sub(render_link, text))
+    rendered = re.sub(r"`([^`]+)`", lambda match: f"<code>{html.escape(match.group(1))}</code>", rendered)
+    rendered = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", rendered)
+    rendered = re.sub(r"(?<!\*)\*([^*]+)\*", r"<em>\1</em>", rendered)
+    for index, token in enumerate(tokens):
+        rendered = rendered.replace(f"\x00{index}\x00", token)
+    return rendered
 
 
 def is_table_separator(line: str) -> bool:
@@ -215,103 +356,175 @@ def table_cells(line: str, resolve_link) -> list[str]:
     return [render_inline(cell.strip(), resolve_link) for cell in line.strip().strip("|").split("|")]
 
 
-def markdown_to_html(markdown: str, resolve_link) -> str:
-    lines = markdown.splitlines()
-    chunks: list[str] = []
-    paragraph: list[str] = []
+def code_label(language: str) -> str:
+    return {"pascal": "Pascal", "text": "Expected output", "output": "Expected output", "console": "Console"}.get(language, language.upper() if language else "Code")
+
+
+def markdown_to_html(markdown: str, resolve_link) -> RenderedDocument:
+    lines, chunks, search_text, paragraph = markdown.splitlines(), [], [], []
     index = 0
     heading_ids: set[str] = set()
-
+    headings: list[tuple[int, str, str]] = []
     def flush_paragraph() -> None:
         if paragraph:
-            chunks.append(f"<p>{render_inline(' '.join(paragraph), resolve_link)}</p>")
+            raw = " ".join(paragraph)
+            chunks.append(f"<p>{render_inline(raw, resolve_link)}</p>")
+            search_text.append(plain_markdown(raw))
             paragraph.clear()
-
     while index < len(lines):
         line = lines[index]
-        fence = FENCE_PATTERN.match(line)
-        heading = HEADING_PATTERN.match(line)
-        list_match = LIST_PATTERN.match(line)
+        fence, heading, list_match = FENCE_PATTERN.match(line), HEADING_PATTERN.match(line), LIST_PATTERN.match(line)
         if fence:
             flush_paragraph()
-            language = fence.group(1).strip().lower()
+            language = re.sub(r"[^a-z0-9_-]", "", fence.group(1).strip().lower())
             index += 1
             code: list[str] = []
             while index < len(lines) and not FENCE_PATTERN.match(lines[index]):
-                code.append(lines[index])
-                index += 1
+                code.append(lines[index]); index += 1
             if index == len(lines):
                 raise ValueError("unclosed code fence")
             language_class = f' class="language-{html.escape(language, quote=True)}"' if language else ""
-            chunks.append(f"<pre><code{language_class}>{html.escape(chr(10).join(code))}</code></pre>")
+            kind = " code-output" if language in {"text", "output", "console"} else ""
+            chunks.append(f'<div class="code-block{kind}" data-language="{html.escape(language, quote=True)}"><div class="code-toolbar"><span class="code-language">{html.escape(code_label(language))}</span><button class="copy-code" type="button" aria-label="Copy code to clipboard">Copy</button></div><pre><code{language_class}>{html.escape(chr(10).join(code))}</code></pre></div>')
+            search_text.extend(code)
         elif heading:
             flush_paragraph()
             level, title = len(heading.group(1)), heading.group(2)
-            base = slug(title)
-            identifier = base
-            suffix = 2
-            while identifier in heading_ids:
-                identifier = f"{base}-{suffix}"
-                suffix += 1
-            heading_ids.add(identifier)
-            chunks.append(f"<h{level} id=\"{identifier}\">{render_inline(title, resolve_link)}</h{level}>")
+            text_title = plain_markdown(title)
+            identifier = unique_identifier(text_title, heading_ids)
+            headings.append((level, text_title, identifier)); search_text.append(text_title)
+            anchor = f'<a class="heading-anchor" href="#{identifier}" aria-label="Link to {html.escape(text_title, quote=True)}">#</a>' if level >= 2 else ""
+            chunks.append(f'<h{level} id="{identifier}"><span>{render_inline(title, resolve_link)}</span>{anchor}</h{level}>')
         elif line.strip().startswith("|") and index + 1 < len(lines) and is_table_separator(lines[index + 1]):
-            flush_paragraph()
-            headers = table_cells(line, resolve_link)
-            index += 2
-            rows: list[list[str]] = []
+            flush_paragraph(); headers = table_cells(line, resolve_link); index += 2; rows: list[list[str]] = []
             while index < len(lines) and lines[index].strip().startswith("|"):
-                rows.append(table_cells(lines[index], resolve_link))
-                index += 1
-            header_html = "".join(f"<th>{cell}</th>" for cell in headers)
+                rows.append(table_cells(lines[index], resolve_link)); search_text.extend(plain_markdown(cell) for cell in lines[index].strip().strip("|").split("|")); index += 1
+            header_html = "".join(f'<th scope="col">{cell}</th>' for cell in headers)
             body_html = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-            chunks.append(f"<table><thead><tr>{header_html}</tr></thead><tbody>{body_html}</tbody></table>")
-            index -= 1
+            chunks.append(f'<div class="table-wrap" tabindex="0" role="region" aria-label="Documentation table"><table><thead><tr>{header_html}</tr></thead><tbody>{body_html}</tbody></table></div>'); index -= 1
+        elif line.lstrip().startswith(">"):
+            flush_paragraph(); quoted: list[str] = []
+            while index < len(lines) and lines[index].lstrip().startswith(">"):
+                quoted.append(re.sub(r"^\s*>\s?", "", lines[index])); index += 1
+            marker = ADMONITION_PATTERN.match(quoted[0].strip()) if quoted else None
+            content = " ".join(item.strip() for item in quoted[1 if marker else 0:] if item.strip())
+            if marker:
+                kind = marker.group(1).lower()
+                chunks.append(f'<aside class="admonition admonition-{kind}" role="note"><p class="admonition-title">{kind.title()}</p><p>{render_inline(content, resolve_link)}</p></aside>')
+            else:
+                chunks.append(f"<blockquote><p>{render_inline(content, resolve_link)}</p></blockquote>")
+            search_text.append(plain_markdown(content)); index -= 1
         elif list_match:
-            flush_paragraph()
-            ordered = list_match.group(1).endswith(".")
-            tag = "ol" if ordered else "ul"
-            items: list[str] = []
+            flush_paragraph(); ordered = list_match.group(1).endswith("."); tag = "ol" if ordered else "ul"; items: list[str] = []
             while index < len(lines):
                 item_match = LIST_PATTERN.match(lines[index])
                 if not item_match or item_match.group(1).endswith(".") != ordered:
                     break
-                items.append(f"<li>{render_inline(item_match.group(2), resolve_link)}</li>")
-                index += 1
-            chunks.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
-            index -= 1
+                item = item_match.group(2); items.append(f"<li>{render_inline(item, resolve_link)}</li>"); search_text.append(plain_markdown(item)); index += 1
+            chunks.append(f"<{tag}>" + "".join(items) + f"</{tag}>"); index -= 1
         elif not line.strip():
             flush_paragraph()
         else:
             paragraph.append(line.strip())
         index += 1
     flush_paragraph()
-    return "\n".join(chunks)
+    return RenderedDocument("\n".join(chunks), tuple(headings), re.sub(r"\s+", " ", " ".join(search_text)).strip())
 
 
-def page_shell(title: str, body: str, config: SiteConfig, page: Path, output: Path) -> str:
-    version_links = []
+def nav_href(page: Path, output: Path, document_path: str) -> str:
+    return relative_url(page.parent, output / Path(document_path).with_suffix(".html"))
+
+
+def render_navigation(layout: DocumentationLayout, current_path: str, page: Path, output: Path, config: SiteConfig) -> str:
+    sections: list[str] = []
+    for section in layout.navigation:
+        links = []
+        for item in section.pages:
+            current = ' aria-current="page"' if item.path == current_path else ""
+            current_class = " is-current" if item.path == current_path else ""
+            links.append(f'<li><a class="nav-link{current_class}"{current} href="{html.escape(nav_href(page, output, item.path), quote=True)}">{html.escape(item.title)}</a></li>')
+        sections.append(f'<section class="sidebar-section"><h2>{html.escape(section.title)}</h2><ul>{"".join(links)}</ul></section>')
+    if layout.project_links:
+        links = []
+        for item in layout.project_links:
+            href = item.url if item.url else source_url(config, str(item.project_path))
+            links.append(f'<li><a class="nav-link external-link" href="{html.escape(href, quote=True)}">{html.escape(item.title)}</a></li>')
+        sections.append(f'<section class="sidebar-section"><h2>Project</h2><ul>{"".join(links)}</ul></section>')
+    return f'<nav class="docs-navigation" aria-label="Documentation navigation">{"".join(sections)}</nav>'
+
+
+def render_toc(headings: tuple[tuple[int, str, str], ...]) -> str:
+    entries = [(level, title, identifier) for level, title, identifier in headings if level in {2, 3}]
+    if len(entries) < 2:
+        return ""
+    items = "".join(f'<li class="toc-level-{level}"><a href="#{html.escape(identifier, quote=True)}">{html.escape(title)}</a></li>' for level, title, identifier in entries)
+    return f'<nav class="on-page" aria-label="On this page"><p>On this page</p><ol>{items}</ol></nav>'
+
+
+def render_breadcrumbs(item: NavigationPage | None, page: Path, output: Path) -> str:
+    if item is None or item.path == "index.md":
+        return ""
+    root = html.escape(relative_url(page.parent, output / "index.html"), quote=True)
+    return f'<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="{root}">Docs</a></li><li>{html.escape(item.section)}</li><li aria-current="page">{html.escape(item.title)}</li></ol></nav>'
+
+
+def render_page_navigation(pages: tuple[NavigationPage, ...], current: NavigationPage | None, page: Path, output: Path) -> str:
+    if current is None:
+        return ""
+    index = pages.index(current); previous = pages[index - 1] if index else None; following = pages[index + 1] if index + 1 < len(pages) else None
+    if not previous and not following:
+        return ""
+    previous_html = f'<a class="previous-page" href="{html.escape(nav_href(page, output, previous.path), quote=True)}"><span>Previous</span><strong>← {html.escape(previous.title)}</strong></a>' if previous else ""
+    next_html = f'<a class="next-page" href="{html.escape(nav_href(page, output, following.path), quote=True)}"><span>Next</span><strong>{html.escape(following.title)} →</strong></a>' if following else ""
+    return f'<nav class="page-navigation" aria-label="Page navigation">{previous_html}{next_html}</nav>'
+
+
+def homepage_content(layout: DocumentationLayout, page: Path, output: Path) -> str:
+    tagline = html.escape(str(layout.homepage.get("tagline", layout.description)))
+    actions, cards = [], []
+    for action in layout.homepage.get("actions", []):
+        if isinstance(action, dict) and isinstance(action.get("label"), str) and isinstance(action.get("path"), str):
+            try:
+                actions.append(f'<a class="button-link" href="{html.escape(nav_href(page, output, safe_document_path(action["path"], "homepage action")), quote=True)}">{html.escape(action["label"])}</a>')
+            except ValueError:
+                continue
+    for card in layout.homepage.get("cards", []):
+        if isinstance(card, dict) and all(isinstance(card.get(key), str) for key in ("eyebrow", "title", "description", "path")):
+            try:
+                href = nav_href(page, output, safe_document_path(card["path"], "homepage card"))
+            except ValueError:
+                continue
+            cards.append(f'<a class="home-card" href="{html.escape(href, quote=True)}"><span>{html.escape(card["eyebrow"])}</span><strong>{html.escape(card["title"])}</strong><p>{html.escape(card["description"])}</p></a>')
+    hero = f'<section class="home-hero"><p class="eyebrow">Documentation</p><h1>{html.escape(layout.site_title.replace(" documentation", ""))}</h1><p>{tagline}</p><div class="hero-actions">{"".join(actions)}</div></section>'
+    return hero + (f'<section class="home-grid" aria-label="Documentation paths">{"".join(cards)}</section>' if cards else "")
+
+
+def remove_first_heading(body: str) -> str:
+    return re.sub(r"^<h1\b[^>]*>.*?</h1>\n?", "", body, count=1, flags=re.DOTALL)
+
+
+def page_shell(title: str, rendered: RenderedDocument, config: SiteConfig, layout: DocumentationLayout, current: NavigationPage | None, page: Path, output: Path, relative: str) -> str:
+    stylesheet = relative_url(page.parent, output / "assets" / "site.css"); script = relative_url(page.parent, output / "assets" / "site.js"); search_script = relative_url(page.parent, output / "search-index.js")
+    home = relative == "index.md"; body = remove_first_heading(rendered.body) if home else rendered.body
+    if home:
+        body = homepage_content(layout, page, output) + body
+    navigation, toc = render_navigation(layout, relative, page, output, config), ("" if home else render_toc(rendered.headings))
+    breadcrumbs, pagination = ("" if home else render_breadcrumbs(current, page, output)), render_page_navigation(layout.pages, current, page, output)
+    root = relative_url(page.parent, output / "index.html")
+    options = []
     for item in config.versions:
-        release = item["release"]
-        target = output.parent / release / "index.html"
-        href = relative_url(page.parent, target)
-        label = f"{release} (current)" if release == config.release else release
-        version_links.append(f'<a href="{html.escape(href, quote=True)}">{html.escape(label)}</a>')
-    stylesheet = relative_url(page.parent, output / "assets" / "site.css")
+        release = item["release"]; label = f"v{release}" + (" (current)" if release == config.current else ""); selected = " selected" if release == config.release else ""
+        options.append(f'<option value="{html.escape(relative_url(page.parent, output.parent / release / "index.html"), quote=True)}"{selected}>{html.escape(label)}</option>')
+    canonical = f"{config.site_url}/{config.release}/{page.relative_to(output).as_posix()}"
+    current_release = ' <span class="current-release">Current</span>' if config.release == config.current else ""
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="stringkit-release" content="{html.escape(config.release, quote=True)}">
-<title>{html.escape(title)} — StringKit-FP</title>
-<link rel="stylesheet" href="{html.escape(stylesheet, quote=True)}">
-</head><body><header><a class="brand" href="{html.escape(relative_url(page.parent, output / 'index.html'), quote=True)}">StringKit-FP docs</a><span>v{html.escape(config.release)}</span></header>
-<main>{body}</main>
-<footer><nav aria-label="Documentation versions">Versions: {' · '.join(version_links)}</nav><p>Generated from the StringKit-FP documentation source.</p></footer>
-</body></html>
-"""
-
-
-SITE_CSS = """*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#1c2733;font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}header,main,footer{max-width:72rem;margin:auto;padding:1rem 1.4rem}header{display:flex;gap:1rem;align-items:center;border-bottom:1px solid #d9e1eb;background:#fff}.brand{font-weight:750;color:#063e70;text-decoration:none}header span{color:#506274}main{max-width:60rem;background:#fff;margin-top:2rem;margin-bottom:2rem;padding:clamp(1.25rem,4vw,3rem);border:1px solid #d9e1eb;border-radius:.6rem;box-shadow:0 8px 30px #102a4310}h1,h2,h3{line-height:1.2;color:#102a43;margin-top:1.8em}h1{margin-top:0}a{color:#0868ae}code{background:#edf2f7;padding:.1em .3em;border-radius:.2em}pre{overflow:auto;background:#102a43;color:#f7fafc;padding:1rem;border-radius:.45rem}pre code{padding:0;background:transparent}table{border-collapse:collapse;width:100%;margin:1rem 0}th,td{border:1px solid #cfd8e3;padding:.55rem;text-align:left;vertical-align:top}th{background:#edf3f8}li+li{margin-top:.35rem}footer{color:#52606d;font-size:.9rem}@media(max-width:640px){header,main,footer{padding-left:1rem;padding-right:1rem}main{margin-top:0;border:0;border-radius:0;box-shadow:none}}"""
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark">
+<meta name="description" content="{html.escape(layout.description, quote=True)}"><meta name="stringkit-release" content="{html.escape(config.release, quote=True)}"><link rel="canonical" href="{html.escape(canonical, quote=True)}">
+<title>{html.escape(title)} — StringKit-FP</title><script>try{{var t=localStorage.getItem('stringkit-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}}catch(e){{}}</script><link rel="stylesheet" href="{html.escape(stylesheet, quote=True)}"></head>
+<body data-doc-root="{html.escape(relative_url(page.parent, output), quote=True)}"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header"><div class="topbar"><a class="brand" href="{html.escape(root, quote=True)}"><span class="brand-mark" aria-hidden="true">S</span><span>StringKit-FP</span></a><nav class="top-links" aria-label="Primary"><a href="{html.escape(root, quote=True)}">Documentation</a><a class="external-link" href="{html.escape(config.repository_url, quote=True)}">GitHub</a></nav><div class="search-box"><label for="search">Search documentation</label><input id="search" type="search" placeholder="Search documentation" autocomplete="off" aria-controls="search-results" aria-expanded="false"><kbd aria-hidden="true">/</kbd></div><div class="header-actions"><label class="version-label" for="version-select">Version</label><select id="version-select" aria-label="Documentation version">{"".join(options)}</select><button id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><span aria-hidden="true">◐</span><span>Theme</span></button></div></div><div id="search-results" class="search-results" role="region" aria-label="Search results" aria-live="polite" hidden></div><details class="mobile-navigation"><summary>Browse documentation</summary>{navigation}</details></header>
+<div class="doc-shell{' no-toc' if not toc else ''}"><aside class="doc-sidebar"><div class="sidebar-sticky">{navigation}</div></aside><main id="content" class="doc-content" tabindex="-1">{breadcrumbs}<article class="doc-prose{' homepage' if home else ''}">{body}</article>{pagination}<footer class="site-footer"><span>StringKit-FP v{html.escape(config.release)}{current_release}</span><span>Free Pascal / Lazarus</span><a class="external-link" href="{html.escape(config.repository_url, quote=True)}">GitHub</a><a class="external-link" href="{html.escape(source_url(config, 'LICENSE.md'), quote=True)}">MIT License</a></footer></main>{f'<aside class="doc-toc"><div class="toc-sticky">{toc}</div></aside>' if toc else ''}</div><script src="{html.escape(search_script, quote=True)}"></script><script src="{html.escape(script, quote=True)}"></script></body></html>\n"""
 
 
 def prepare_output(output: Path, release: str) -> None:
@@ -320,77 +533,58 @@ def prepare_output(output: Path, release: str) -> None:
         if not marker.is_file():
             raise ValueError(f"refusing to replace unmarked documentation output: {output}")
         shutil.rmtree(output)
-    output.mkdir(parents=True, exist_ok=True)
-    marker.write_text(release + "\n", encoding="utf-8")
+    output.mkdir(parents=True, exist_ok=True); marker.write_text(release + "\n", encoding="utf-8")
+
+
+def copy_assets(output: Path) -> None:
+    assets = output / "assets"; assets.mkdir()
+    for name in ("site.css", "site.js"):
+        source = DOC_ASSETS / name
+        if not source.is_file():
+            raise ValueError(f"missing documentation asset: {source}")
+        shutil.copy2(source, assets / name)
 
 
 def write_landing_page(site_root: Path, config: SiteConfig) -> None:
-    target = f"{config.current}/index.html"
-    site_root.mkdir(parents=True, exist_ok=True)
-    (site_root / "index.html").write_text(
-        f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="0; url={target}"><title>StringKit-FP documentation</title></head><body><p>Opening <a href="{target}">StringKit-FP {html.escape(config.release)} documentation</a>.</p></body></html>\n""",
-        encoding="utf-8",
-    )
+    target = f"{config.current}/index.html"; site_root.mkdir(parents=True, exist_ok=True)
+    (site_root / "index.html").write_text(f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="0; url={target}"><title>StringKit-FP documentation</title></head><body><main><p>Opening <a href="{target}">StringKit-FP {html.escape(config.current)} documentation</a>.</p></main></body></html>\n""", encoding="utf-8")
     (site_root / ".nojekyll").write_text("", encoding="utf-8")
-    (site_root / "versions.json").write_text(
-        json.dumps({"schema_version": 1, "current": config.release, "versions": config.versions}, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    (site_root / "versions.json").write_text(json.dumps({"schema_version": 1, "current": config.current, "versions": config.versions}, indent=2) + "\n", encoding="utf-8")
 
 
 def write_offline_archive(site_root: Path, archive: Path, release: str) -> str:
-    archive.parent.mkdir(parents=True, exist_ok=True)
-    root_name = f"stringkit-fp-docs-{release}"
+    archive.parent.mkdir(parents=True, exist_ok=True); root_name = f"stringkit-fp-docs-{release}"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         for path in sorted(path for path in site_root.rglob("*") if path.is_file()):
             if path.resolve() == archive.resolve() or path.name == OUTPUT_MARKER:
                 continue
-            info = zipfile.ZipInfo(f"{root_name}/{path.relative_to(site_root).as_posix()}")
-            info.date_time = (1980, 1, 1, 0, 0, 0)
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o644 << 16
-            bundle.writestr(info, path.read_bytes())
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    archive.with_name(archive.name + ".sha256").write_text(f"{digest}  {archive.name}\n", encoding="ascii")
+            info = zipfile.ZipInfo(f"{root_name}/{path.relative_to(site_root).as_posix()}"); info.date_time = (1980, 1, 1, 0, 0, 0); info.compress_type = zipfile.ZIP_DEFLATED; info.external_attr = 0o644 << 16; bundle.writestr(info, path.read_bytes())
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest(); archive.with_name(archive.name + ".sha256").write_text(f"{digest}  {archive.name}\n", encoding="ascii")
     return digest
 
 
-def build_site(
-    source: Path,
-    output: Path,
-    site_root: Path,
-    versions_path: Path,
-    offline_archive: Path | None = None,
-    release: str | None = None,
-) -> int:
-    source = source.resolve()
-    output = output.resolve()
-    site_root = site_root.resolve()
-    config = load_config(versions_path.resolve(), release)
-    ensure_layout(source, config)
+def build_site(source: Path, output: Path, site_root: Path, versions_path: Path, offline_archive: Path | None = None, release: str | None = None) -> int:
+    source, output, site_root = source.resolve(), output.resolve(), site_root.resolve()
+    config = load_config(versions_path.resolve(), release); layout = load_layout(source, config)
     if output.name != config.release or output.parent != site_root:
         raise ValueError("versioned output must be site-root/<current release>")
     documents = sorted(source.rglob("*.md"))
     if not documents:
         raise ValueError(f"no Markdown documents found in {source}")
-    validate_source_links(source, documents, source.parent)
-    prepare_output(output, config.release)
-    (output / "assets").mkdir()
-    (output / "assets" / "site.css").write_text(SITE_CSS + "\n", encoding="utf-8")
-    search_entries: list[dict[str, str]] = []
+    validate_source_links(source, documents, source.parent); prepare_output(output, config.release); copy_assets(output)
+    search_entries: list[dict[str, object]] = []; by_path = {item.path: item for item in layout.pages}
     for document in documents:
-        relative = document.relative_to(source)
-        page = output / relative.with_suffix(".html")
-        page.parent.mkdir(parents=True, exist_ok=True)
-        markdown = document.read_text(encoding="utf-8")
-        resolver = link_resolver(document, page, source, output, source.parent, config)
-        body = markdown_to_html(markdown, resolver)
-        title_match = HEADING_PATTERN.search(markdown)
-        title = title_match.group(2) if title_match else relative.stem
-        page.write_text(page_shell(title, body, config, page, output), encoding="utf-8")
-        search_entries.append({"title": title, "url": relative.with_suffix(".html").as_posix(), "text": re.sub(r"\s+", " ", markdown)})
+        relative = document.relative_to(source); relative_path = relative.as_posix(); page = output / relative.with_suffix(".html"); page.parent.mkdir(parents=True, exist_ok=True)
+        rendered = markdown_to_html(document.read_text(encoding="utf-8"), link_resolver(document, page, source, output, source.parent, config))
+        fallback = by_path.get(relative_path, NavigationPage(relative_path, relative.stem, "Documentation"))
+        title = next((text for level, text, _identifier in rendered.headings if level == 1), fallback.title)
+        page.write_text(page_shell(title, rendered, config, layout, by_path.get(relative_path), page, output, relative_path), encoding="utf-8")
+        item = by_path.get(relative_path)
+        search_entries.append({"title": title, "section": item.section if item else "Documentation", "headings": [text for level, text, _identifier in rendered.headings if level >= 2], "url": relative.with_suffix(".html").as_posix(), "text": rendered.text})
+    search_json = json.dumps(search_entries, ensure_ascii=False, separators=(",", ":"))
     (output / "search-index.json").write_text(json.dumps(search_entries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (output / "release.json").write_text(json.dumps({"schema_version": 1, "release": config.release, "source_ref": config.source_ref, "page_count": len(documents)}, indent=2) + "\n", encoding="utf-8")
+    (output / "search-index.js").write_text("globalThis.StringKitSearchIndex=" + search_json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026") + ";\n", encoding="utf-8")
+    (output / "release.json").write_text(json.dumps({"schema_version": 2, "release": config.release, "source_ref": config.source_ref, "page_count": len(documents)}, indent=2) + "\n", encoding="utf-8")
     write_landing_page(site_root, config)
     if offline_archive:
         write_offline_archive(site_root, offline_archive.resolve(), config.release)
@@ -399,17 +593,8 @@ def build_site(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path("docs"))
-    parser.add_argument("--versions", type=Path, default=Path("docs/versions.json"))
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--site-root", type=Path)
-    parser.add_argument("--offline-archive", type=Path)
-    parser.add_argument("--release", help="build this release from its matching documentation source")
-    args = parser.parse_args()
-    config = load_config(args.versions.resolve(), args.release)
-    site_root = args.site_root or Path("build/docs-site")
-    output = args.output or site_root / config.release
+    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--source", type=Path, default=Path("docs")); parser.add_argument("--versions", type=Path, default=Path("docs/versions.json")); parser.add_argument("--output", type=Path); parser.add_argument("--site-root", type=Path); parser.add_argument("--offline-archive", type=Path); parser.add_argument("--release", help="build this release from its matching documentation source")
+    args = parser.parse_args(); config = load_config(args.versions.resolve(), args.release); site_root = args.site_root or Path("build/docs-site"); output = args.output or site_root / config.release
     build_site(args.source, output, site_root, args.versions, args.offline_archive, args.release)
     return 0
 
