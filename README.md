@@ -636,7 +636,7 @@ lazbuild --build-mode=Release tests/TestRunner.lpi
 ./tests/TestRunner.exe -a --format=plain
 ```
 
-The Lazarus package is also compiled locally before releases. It remains a separate check from CI to keep the workflow limited to the command-line FPC toolchain.
+The Windows CI job also compiles the Lazarus package; run the same check locally with `lazbuild --build-all packages/lazarus/stringkit_fp.lpk` before a release.
 
 ## 🧭 **Future Weaving Patterns**
 

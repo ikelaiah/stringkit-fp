@@ -37,7 +37,7 @@ Notes:
 
 ### CI
 
-- Added GitHub Actions coverage for FPC 3.2.2 on Ubuntu and Windows, including tests, examples, the full helper, and representative modular-helper configurations.
+- Added GitHub Actions coverage for FPC 3.2.2 on Ubuntu and Windows, including tests, examples, the full helper, representative modular-helper configurations, and the Lazarus package.
 
 ### Documentation
 

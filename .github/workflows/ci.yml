@@ -27,12 +27,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes fpc
 
-      - name: Install Free Pascal on Windows
+      - name: Install Lazarus and Free Pascal on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install freepascal --version=3.2.2 --yes --no-progress --limit-output
-          $compilers = Get-ChildItem -Path 'C:\tools\freepascal' -Filter fpc.exe -File -Recurse
+          choco install lazarus --version=4.0.0 --yes --no-progress --limit-output
+          $compilers = Get-ChildItem -Path 'C:\lazarus' -Filter fpc.exe -File -Recurse
           $compiler = $compilers | Where-Object { $_.Directory.Name -eq 'x86_64-win64' } | Select-Object -First 1
           if (-not $compiler) {
             $compiler = $compilers | Select-Object -First 1
@@ -41,6 +41,7 @@ jobs:
             throw 'The Free Pascal installation did not provide fpc.exe.'
           }
           $compiler.Directory.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          'C:\lazarus' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Show compiler version
         run: fpc -iV
@@ -68,3 +69,4 @@ jobs:
           fpc -MObjFPC -Scghi -dSK_ANY -dSK_ENCODE "-Fu$root\src" "-FU$root\build\encode" "-FE$root\build\encode" "$root\examples\directives\EncodeOnlyDemo.pas"
           fpc -MObjFPC -Scghi -dSK_ANY -dSK_CASE -dSK_ENCODE "-Fu$root\src" "-FU$root\build\case-encode" "-FE$root\build\case-encode" "$root\examples\directives\CaseAndEncodeDemo.pas"
           fpc -MObjFPC -Scghi -B -dSK_ANY -dSK_COMPARE "-Fu$root\src" "-FU$root\build\compare" "$root\src\StringKitHelper.pas"
+          lazbuild --build-all "$root\packages\lazarus\stringkit_fp.lpk"
