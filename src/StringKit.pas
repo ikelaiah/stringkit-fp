@@ -871,15 +871,14 @@ type
       @references Based on Levenshtein distance: `1.0 - (Distance / Max(Length(S1), Length(S2)))`
                   See also: https://en.wikipedia.org/wiki/Levenshtein_distance#Relative_distance
       
-      @warning @warning Relies on LevenshteinDistance, which can be computationally expensive for long strings.
-                        Will raise EDivByZero exception if both input strings are empty.
-                        Case-sensitive comparison.
+      @warning Relies on LevenshteinDistance, which can be computationally expensive for long strings.
+               Comparison is case-sensitive.
 
       @example
         Result := LevenshteinSimilarity('kitten', 'sitting'); // Approx 0.57
         Result := LevenshteinSimilarity('test', 'test');     // Returns: 1.0
         Result := LevenshteinSimilarity('test', '');        // Returns: 0.0
-        // Result := LevenshteinSimilarity('', '');        // Raises EDivByZero
+        Result := LevenshteinSimilarity('', '');            // Returns: 1.0
     *)
     class function LevenshteinSimilarity(const S1, S2: string): Double; static;
     
@@ -1035,15 +1034,14 @@ type
                   See also: https://en.wikipedia.org/wiki/Longest_common_subsequence_problem#Relation_to_other_problems
       
       @warning Relies on LongestCommonSubsequence, so it can be computationally expensive for long strings.
-               The implementation divides by `Max(Length(S1), Length(S2))`. This will cause division by zero if both S1 and S2 are empty.
-               **Revised Warning:** Relies on LongestCommonSubsequence. Can be computationally expensive. **Will raise EDivByZero exception if both input strings are empty.** Case-sensitive.
+               Comparison is case-sensitive.
 
       @example
         Result := LCSSimilarity('ABCDEFG', 'ABDZEFXG'); // LCS='ABDEG', Length=5. MaxLen=8. Ratio = 5/8 = 0.625
         Result := LCSSimilarity('banana', 'atana');    // LCS='aana', Length=4. MaxLen=6. Ratio = 4/6 = ~0.667
         Result := LCSSimilarity('test', 'test');       // LCS='test', Length=4. MaxLen=4. Ratio = 1.0
         Result := LCSSimilarity('abc', 'def');       // LCS='', Length=0. MaxLen=3. Ratio = 0.0
-        // Result := LCSSimilarity('', '');            // Raises EDivByZero
+        Result := LCSSimilarity('', '');              // Returns: 1.0
     *)
     class function LCSSimilarity(const S1, S2: string): Double; static;
     
@@ -1401,18 +1399,19 @@ type
       @param Ellipsis The string to append if truncation occurs (default is '...').
       
       @returns The truncated string with ellipsis if Text length exceeds MaxLength. If Text length
-               is less than or equal to MaxLength, returns the original Text. If MaxLength is less
-               than the length of Ellipsis, the behavior might be unexpected (potentially returning only Ellipsis or part of it).
+               is less than or equal to MaxLength, returns the original Text. If MaxLength is not
+               positive, returns an empty string. If MaxLength is shorter than Ellipsis, returns
+               the leading MaxLength characters of Ellipsis.
       
-      @warning Ensure MaxLength is reasonably larger than the length of Ellipsis. If MaxLength is very small,
-               the result might be just the Ellipsis or an empty string depending on calculation.
+      @warning The result never exceeds MaxLength when truncation occurs.
       
       @example
         Result := Truncate('This is a long string', 10);        // Returns: 'This is...'
         Result := Truncate('Short enough', 20);                 // Returns: 'Short enough'
         Result := Truncate('VeryLongWord', 8, '..');            // Returns: 'VeryLo..'
-        Result := Truncate('Tiny', 3);                          // Returns: '...' (MaxLength <= Ellipsis length)
-        Result := Truncate('Tiny', 2);                          // Returns: '...' (Result length is Ellipsis length)
+        Result := Truncate('Tiny', 3);                          // Returns: '...'
+        Result := Truncate('Tiny', 2);                          // Returns: '..'
+        Result := Truncate('Tiny', 0);                          // Returns: ''
         Result := Truncate('', 10);                             // Returns: ''
     *)
     class function Truncate(const Text: string; MaxLength: Integer; const Ellipsis: string = '...'): string; static;
@@ -1443,25 +1442,23 @@ type
     
     (*
       @description Formats an integer (Int64) by inserting a thousand separator character.
-                   Only formats non-negative numbers with more than 3 digits.
       
       @usage Use to make large numbers easier to read.
       
       @param Value The integer value to format.
       @param ThousandSeparator The character to use as a separator (default is comma ',').
       
-      @returns The formatted number as a string. Returns the original string representation
-               if the value is negative or has 3 or fewer digits.
+      @returns The formatted number as a string. Values with 3 or fewer digits are returned
+               without a separator; negative values retain their leading minus sign.
       
-      @warning Only formats non-negative integers. Does not handle locale-specific formatting rules.
-               Negative numbers are returned as plain strings (e.g., '-1234').
+      @warning Does not handle locale-specific formatting rules.
       
       @example
         Result := FormatNumber(1234567);       // Returns: '1,234,567'
         Result := FormatNumber(123);           // Returns: '123'
         Result := FormatNumber(1234, '.');     // Returns: '1.234'
         Result := FormatNumber(0);             // Returns: '0'
-        Result := FormatNumber(-12345);        // Returns: '-12345' (not formatted)
+        Result := FormatNumber(-12345);        // Returns: '-12,345'
     *)
     class function FormatNumber(const Value: Int64; ThousandSeparator: Char = ','): string; static;
     
@@ -1653,7 +1650,8 @@ type
     class function CountWords(const Text: string): Integer; static;
     
     (*
-      @description Calculates the Flesch-Kincaid Reading Ease score for a given text. This score
+      @description Calculates the Flesch Reading Ease score for a given text. The public name is
+                   retained for compatibility, but this is not the Flesch-Kincaid Grade Level formula. This score
                    estimates the readability of English text, with higher scores indicating easier
                    readability (typically on a 0-100 scale).
       
@@ -1662,7 +1660,7 @@ type
       
       @param Text The text to analyze.
       
-      @returns The Flesch-Kincaid Reading Ease score (Double), typically between 0 and 100.
+      @returns The Flesch Reading Ease score (Double), typically between 0 and 100.
                Returns 0 if the text contains no words.
       
       @references Formula: `206.835 - 1.015 * (TotalWords / TotalSentences) - 84.6 * (TotalSyllables / TotalWords)`
@@ -2308,7 +2306,7 @@ begin
   while P > 0 do
   begin
     Inc(Result);
-    P := Pos(SubStr, Text, P + 1);
+    P := Pos(SubStr, Text, P + Length(SubStr));
   end;
 end;
 
@@ -2419,10 +2417,14 @@ end;
 
 class function TStringKit.LevenshteinSimilarity(const S1, S2: string): Double;
 var
-  Distance: Integer;
+  Distance, MaxLength: Integer;
 begin
+  MaxLength := Max(Length(S1), Length(S2));
+  if MaxLength = 0 then
+    Exit(1.0);
+
   Distance := LevenshteinDistance(S1, S2);
-  Result := 1.0 - (Distance / Max(Length(S1), Length(S2)));
+  Result := 1.0 - (Distance / MaxLength);
 end;
 
 class function TStringKit.HammingDistance(const S1, S2: string): Integer;
@@ -2512,6 +2514,10 @@ begin
 
   // Calculate Jaro similarity using the standard formula
   Result := (1/3) * (M / Length(S1) + M / Length(S2) + (M - T) / M);
+  if Result < 0.0 then
+    Result := 0.0
+  else if Result > 1.0 then
+    Result := 1.0;
 end;
 
 class function TStringKit.JaroWinklerSimilarity(const S1, S2: string): Double;
@@ -2537,7 +2543,9 @@ begin
   Result := JaroDistance + (PrefixLength * 0.1 * (1 - JaroDistance));
   
   // Ensure the result is between 0 and 1
-  if Result > 1.0 then
+  if Result < 0.0 then
+    Result := 0.0
+  else if Result > 1.0 then
     Result := 1.0;
 end;
 
@@ -2591,9 +2599,14 @@ end;
 class function TStringKit.LCSSimilarity(const S1, S2: string): Double;
 var
   LCS: string;
+  MaxLength: Integer;
 begin
+  MaxLength := Max(Length(S1), Length(S2));
+  if MaxLength = 0 then
+    Exit(1.0);
+
   LCS := LongestCommonSubsequence(S1, S2);
-  Result := Length(LCS) / Max(Length(S1), Length(S2));
+  Result := Length(LCS) / MaxLength;
 end;
 
 class function TStringKit.IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean;
@@ -2829,8 +2842,13 @@ end;
 
 class function TStringKit.Truncate(const Text: string; MaxLength: Integer; const Ellipsis: string = '...'): string;
 begin
+  if MaxLength <= 0 then
+    Exit('');
+
   if Length(Text) <= MaxLength then
     Result := Text
+  else if Length(Ellipsis) >= MaxLength then
+    Result := Copy(Ellipsis, 1, MaxLength)
   else
     Result := Copy(Text, 1, MaxLength - Length(Ellipsis)) + Ellipsis;
 end;
@@ -2856,32 +2874,38 @@ end;
 
 class function TStringKit.FormatNumber(const Value: Int64; ThousandSeparator: Char = ','): string;
 var
-  I, GroupCount, Len: Integer;
+  I, GroupCount, FirstDigit, Len: Integer;
   Temp: string;
 begin
   // Convert to string first
   Result := IntToStr(Value);
-  Len := Length(Result);
+  FirstDigit := 1;
+  if Result[1] = '-' then
+    FirstDigit := 2;
+  Len := Length(Result) - FirstDigit + 1;
   
   // Add thousand separators from right to left
-  if (Len > 3) and (Value >= 0) then
+  if Len > 3 then
   begin
     Temp := '';
     GroupCount := 0;
     
-    for I := Len downto 1 do
+    for I := Length(Result) downto FirstDigit do
     begin
       Temp := Result[I] + Temp;
       Inc(GroupCount);
       
-      if (GroupCount = 3) and (I > 1) then
+      if (GroupCount = 3) and (I > FirstDigit) then
       begin
         Temp := ThousandSeparator + Temp;
         GroupCount := 0;
       end;
     end;
-    
-    Result := Temp;
+
+    if FirstDigit = 2 then
+      Result := '-' + Temp
+    else
+      Result := Temp;
   end;
 end;
 
@@ -2990,45 +3014,25 @@ var
 begin
   SplitList := TStringList.Create;
   try
-    // Special case for empty text - should return array with one empty element
-    if Text = '' then
+    Remaining := Text;
+    SplitCount := 0;
+
+    while (MaxSplit = 0) or (SplitCount < MaxSplit) do
     begin
-      if not RemoveEmptyEntries then
-        SplitList.Add('');
-    end
-    else
-    begin
-      Remaining := Text;
-      SplitCount := 0;
-      
-      while (Remaining <> '') and ((MaxSplit = 0) or (SplitCount < MaxSplit)) do
-      begin
-        DelimPos := Pos(Delimiter, Remaining);
-        
-        if DelimPos > 0 then
-        begin
-          Current := Copy(Remaining, 1, DelimPos - 1);
-          Remaining := Copy(Remaining, DelimPos + Length(Delimiter), Length(Remaining));
-          
-          if (not RemoveEmptyEntries) or (Current <> '') then
-          begin
-            SplitList.Add(Current);
-            Inc(SplitCount);
-          end;
-        end
-        else
-        begin
-          // No more delimiters, add the remaining text
-          if (not RemoveEmptyEntries) or (Remaining <> '') then
-            SplitList.Add(Remaining);
-          Break;
-        end;
-      end;
-      
-      // If we reached MaxSplit, add the remaining text as the last part
-      if (MaxSplit > 0) and (SplitCount = MaxSplit) and (Remaining <> '') then
-        SplitList.Add(Remaining);
+      DelimPos := Pos(Delimiter, Remaining);
+      if DelimPos = 0 then
+        Break;
+
+      Current := Copy(Remaining, 1, DelimPos - 1);
+      Remaining := Copy(Remaining, DelimPos + Length(Delimiter), Length(Remaining));
+
+      if (not RemoveEmptyEntries) or (Current <> '') then
+        SplitList.Add(Current);
+      Inc(SplitCount);
     end;
+
+    if (not RemoveEmptyEntries) or (Remaining <> '') then
+      SplitList.Add(Remaining);
     
     // Convert the TStringList to the result array
     SetLength(Result, SplitList.Count);
@@ -3398,7 +3402,7 @@ begin
       Inc(Syllables);
   end;
   
-  // Calculate Flesch-Kincaid Reading Ease score
+  // Calculate Flesch Reading Ease score (keeps the legacy public method name)
   // Formula: 206.835 - 1.015 * (words/sentences) - 84.6 * (syllables/words)
   Result := 206.835 - 1.015 * (WordCount / Sentences) - 84.6 * (Syllables / WordCount);
   

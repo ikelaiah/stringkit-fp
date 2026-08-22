@@ -11,6 +11,7 @@
 
 # Lazarus backup files
 *.bak
+*.backup
 *.lps
 backup/
 lib/
@@ -34,4 +35,4 @@ test_dir/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db

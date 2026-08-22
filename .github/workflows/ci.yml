@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: FPC 3.2.2 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Free Pascal on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fpc
+
+      - name: Install Lazarus and Free Pascal on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install lazarus --version=4.0.0 --yes --no-progress --limit-output
+          $compilers = Get-ChildItem -Path 'C:\lazarus' -Filter fpc.exe -File -Recurse
+          $compiler = $compilers | Where-Object { $_.Directory.Name -eq 'x86_64-win64' } | Select-Object -First 1
+          if (-not $compiler) {
+            $compiler = $compilers | Select-Object -First 1
+          }
+          if (-not $compiler) {
+            throw 'The Free Pascal installation did not provide fpc.exe.'
+          }
+          $compiler.Directory.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          'C:\lazarus' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Show compiler version
+        run: fpc -iV
+
+      - name: Compile and run tests on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p build/tests build/examples build/encode build/case-encode build/compare
+          fpc -MObjFPC -Scghi "-Fu$GITHUB_WORKSPACE/src" "-Fu$GITHUB_WORKSPACE/tests" "-FU$GITHUB_WORKSPACE/build/tests" "-FE$GITHUB_WORKSPACE/build/tests" "$GITHUB_WORKSPACE/tests/TestRunner.lpr"
+          "$GITHUB_WORKSPACE/build/tests/TestRunner" -a --format=plain
+          fpc -MObjFPC -Scghi "-Fu$GITHUB_WORKSPACE/src" "-FU$GITHUB_WORKSPACE/build/examples" "-FE$GITHUB_WORKSPACE/build/examples" "$GITHUB_WORKSPACE/examples/StringKitExample/StringKitExample.pas"
+          fpc -MObjFPC -Scghi -dSK_ANY -dSK_ENCODE "-Fu$GITHUB_WORKSPACE/src" "-FU$GITHUB_WORKSPACE/build/encode" "-FE$GITHUB_WORKSPACE/build/encode" "$GITHUB_WORKSPACE/examples/directives/EncodeOnlyDemo.pas"
+          fpc -MObjFPC -Scghi -dSK_ANY -dSK_CASE -dSK_ENCODE "-Fu$GITHUB_WORKSPACE/src" "-FU$GITHUB_WORKSPACE/build/case-encode" "-FE$GITHUB_WORKSPACE/build/case-encode" "$GITHUB_WORKSPACE/examples/directives/CaseAndEncodeDemo.pas"
+          fpc -MObjFPC -Scghi -B -dSK_ANY -dSK_COMPARE "-Fu$GITHUB_WORKSPACE/src" "-FU$GITHUB_WORKSPACE/build/compare" "$GITHUB_WORKSPACE/src/StringKitHelper.pas"
+
+      - name: Compile and run tests on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $root = $env:GITHUB_WORKSPACE
+          New-Item -ItemType Directory -Force build/tests, build/examples, build/encode, build/case-encode, build/compare | Out-Null
+          fpc -MObjFPC -Scghi "-Fu$root\src" "-Fu$root\tests" "-FU$root\build\tests" "-FE$root\build\tests" "$root\tests\TestRunner.lpr"
+          & "$root\build\tests\TestRunner.exe" -a --format=plain
+          fpc -MObjFPC -Scghi "-Fu$root\src" "-FU$root\build\examples" "-FE$root\build\examples" "$root\examples\StringKitExample\StringKitExample.pas"
+          fpc -MObjFPC -Scghi -dSK_ANY -dSK_ENCODE "-Fu$root\src" "-FU$root\build\encode" "-FE$root\build\encode" "$root\examples\directives\EncodeOnlyDemo.pas"
+          fpc -MObjFPC -Scghi -dSK_ANY -dSK_CASE -dSK_ENCODE "-Fu$root\src" "-FU$root\build\case-encode" "-FE$root\build\case-encode" "$root\examples\directives\CaseAndEncodeDemo.pas"
+          fpc -MObjFPC -Scghi -B -dSK_ANY -dSK_COMPARE "-Fu$root\src" "-FU$root\build\compare" "$root\src\StringKitHelper.pas"
+          lazbuild --build-all "$root\packages\lazarus\stringkit_fp.lpk"

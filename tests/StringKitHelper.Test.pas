@@ -377,6 +377,8 @@ const
 begin
   AssertEquals('CountSubString should work correctly',
     3, TestStr.CountSubString('Hello'));
+  AssertEquals('CountSubString should delegate non-overlapping semantics',
+    2, 'aaaaa'.CountSubString('aa'));
 end;
 
 procedure TStringHelperTests.Test31_LevenshteinDistance;
@@ -393,6 +395,8 @@ const
 begin
   AssertEquals('Identical strings should have similarity 1.0',
     1.0, TestStr.LevenshteinSimilarity('test'));
+  AssertEquals('Empty helper values should delegate perfect similarity',
+    1.0, ''.LevenshteinSimilarity(''), 0.000001);
 end;
 
 procedure TStringHelperTests.Test33_HammingDistance;
@@ -433,6 +437,8 @@ const
 begin
   AssertEquals('Identical strings should have LCS similarity 1.0',
     1.0, TestStr.LCSSimilarity('test'));
+  AssertEquals('Empty helper values should delegate perfect LCS similarity',
+    1.0, ''.LCSSimilarity(''), 0.000001);
 end;
 
 procedure TStringHelperTests.Test38_IsFuzzyMatch;
@@ -545,6 +551,8 @@ const
 begin
   AssertEquals('Truncate should limit string length',
     'This is...', TestStr.Truncate(10, '...'));
+  AssertEquals('Truncate should delegate a non-positive limit',
+    '', 'abcdef'.Truncate(0));
 end;
 
 procedure TStringHelperTests.Test51_Join;
@@ -569,6 +577,10 @@ begin
   AssertEquals('First element should match', 'one', Result[0]);
   AssertEquals('Second element should match', 'two', Result[1]);
   AssertEquals('Third element should match', 'three', Result[2]);
+
+  Result := 'a,b,'.Split(',');
+  AssertEquals('Split should delegate trailing empty entries', 3, Length(Result));
+  AssertEquals('Split should preserve a trailing empty entry', '', Result[2]);
 end;
 
 procedure TStringHelperTests.Test53_FormatFileSize;
@@ -593,6 +605,8 @@ begin
     '123', '123'.FormatNumber);
   AssertEquals('FormatNumber should handle zero',
     '0', string('0').FormatNumber);
+  AssertEquals('FormatNumber should delegate negative number formatting',
+    '-1,234,567', '-1234567'.FormatNumber);
   AssertEquals('FormatNumber should handle invalid input',
     '0', 'notanumber'.FormatNumber);
 end;

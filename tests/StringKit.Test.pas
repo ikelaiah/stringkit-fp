@@ -369,6 +369,16 @@ const
 begin
   AssertEquals('CountSubString should work correctly',
     3, TStringKit.CountSubString(TestStr, 'Hello'));
+  AssertEquals('CountSubString should count non-overlapping occurrences',
+    3, TStringKit.CountSubString('ababab', 'ab'));
+  AssertEquals('CountSubString should not count overlapping occurrences',
+    2, TStringKit.CountSubString('aaaa', 'aa'));
+  AssertEquals('CountSubString should not count overlapping-looking occurrences',
+    2, TStringKit.CountSubString('aaaaa', 'aa'));
+  AssertEquals('CountSubString should return zero for an empty substring',
+    0, TStringKit.CountSubString('abc', ''));
+  AssertEquals('CountSubString should return zero for empty text',
+    0, TStringKit.CountSubString('', 'x'));
 end;
 
 procedure TStringTests.Test31_LevenshteinDistance;
@@ -403,6 +413,19 @@ begin
   // Similar strings should have high similarity
   AssertTrue('Similar strings should have higher similarity',
     TStringKit.LevenshteinSimilarity('hello', 'hallo') > 0.7);
+
+  AssertEquals('Two empty strings should be perfectly similar',
+    1.0, TStringKit.LevenshteinSimilarity('', ''), 0.000001);
+  AssertEquals('An empty and non-empty string should be dissimilar',
+    0.0, TStringKit.LevenshteinSimilarity('', 'abc'), 0.000001);
+  AssertEquals('A non-empty and empty string should be dissimilar',
+    0.0, TStringKit.LevenshteinSimilarity('abc', ''), 0.000001);
+  AssertTrue('Levenshtein similarity should be symmetric',
+    Abs(TStringKit.LevenshteinSimilarity('kitten', 'sitting') -
+      TStringKit.LevenshteinSimilarity('sitting', 'kitten')) < 0.000001);
+  AssertTrue('Levenshtein similarity should stay in range',
+    (TStringKit.LevenshteinSimilarity('kitten', 'sitting') >= 0.0) and
+    (TStringKit.LevenshteinSimilarity('kitten', 'sitting') <= 1.0));
 end;
 
 procedure TStringTests.Test33_HammingDistance;
@@ -449,6 +472,12 @@ begin
   // Test transpositions
   AssertTrue('DIXON/DICKSON should return reasonable similarity',
     TStringKit.JaroSimilarity('DIXON', 'DICKSON') > 0.6);
+  AssertTrue('Jaro similarity should be symmetric',
+    Abs(TStringKit.JaroSimilarity('MARTHA', 'MARHTA') -
+      TStringKit.JaroSimilarity('MARHTA', 'MARTHA')) < 0.000001);
+  AssertTrue('Jaro similarity should stay in range',
+    (TStringKit.JaroSimilarity('MARTHA', 'MARHTA') >= 0.0) and
+    (TStringKit.JaroSimilarity('MARTHA', 'MARHTA') <= 1.0));
 end;
 
 procedure TStringTests.Test35_JaroWinklerSimilarity;
@@ -482,6 +511,13 @@ begin
     
   AssertEquals('One empty string should return 0.0',
     0.0, TStringKit.JaroWinklerSimilarity('A', ''));
+
+  AssertTrue('Jaro-Winkler similarity should stay in range',
+    (TStringKit.JaroWinklerSimilarity('MARTHA', 'MARHTA') >= 0.0) and
+    (TStringKit.JaroWinklerSimilarity('MARTHA', 'MARHTA') <= 1.0));
+  AssertTrue('Jaro-Winkler similarity should be symmetric',
+    Abs(TStringKit.JaroWinklerSimilarity('MARTHA', 'MARHTA') -
+      TStringKit.JaroWinklerSimilarity('MARHTA', 'MARTHA')) < 0.000001);
 end;
 
 procedure TStringTests.Test36_LongestCommonSubsequence;
@@ -515,6 +551,19 @@ begin
   AssertTrue('Partial matches should have similarity between 0 and 1',
     (TStringKit.LCSSimilarity('abcdef', 'abcxyz') > 0.0) and
     (TStringKit.LCSSimilarity('abcdef', 'abcxyz') < 1.0));
+
+  AssertEquals('Two empty strings should be perfectly similar',
+    1.0, TStringKit.LCSSimilarity('', ''), 0.000001);
+  AssertEquals('An empty and non-empty string should be dissimilar',
+    0.0, TStringKit.LCSSimilarity('', 'abc'), 0.000001);
+  AssertEquals('A non-empty and empty string should be dissimilar',
+    0.0, TStringKit.LCSSimilarity('abc', ''), 0.000001);
+  AssertTrue('LCS similarity should be symmetric',
+    Abs(TStringKit.LCSSimilarity('abcdef', 'abcxyz') -
+      TStringKit.LCSSimilarity('abcxyz', 'abcdef')) < 0.000001);
+  AssertTrue('LCS similarity should stay in range',
+    (TStringKit.LCSSimilarity('abcdef', 'abcxyz') >= 0.0) and
+    (TStringKit.LCSSimilarity('abcdef', 'abcxyz') <= 1.0));
 end;
 
 procedure TStringTests.Test38_IsFuzzyMatch;
@@ -751,6 +800,17 @@ begin
     
   AssertEquals('Empty text should remain empty',
     '', TStringKit.Truncate('', 10, '...'));
+
+  AssertEquals('Non-positive limits should return an empty string',
+    '', TStringKit.Truncate('abcdef', 0));
+  AssertEquals('A one-character limit should not be exceeded',
+    '.', TStringKit.Truncate('abcdef', 1));
+  AssertEquals('A two-character limit should not be exceeded',
+    '..', TStringKit.Truncate('abcdef', 2));
+  AssertEquals('An ellipsis-length limit should return the ellipsis',
+    '...', TStringKit.Truncate('abcdef', 3));
+  AssertEquals('A limit larger than the ellipsis should include text',
+    'a...', TStringKit.Truncate('abcdef', 4));
 end;
 
 procedure TStringTests.Test51_FormatFileSize;
@@ -785,8 +845,12 @@ begin
   AssertEquals('Zero should be formatted correctly',
     '0', TStringKit.FormatNumber(0));
     
-  AssertEquals('Negative numbers should be preserved',
-    '-1234', TStringKit.FormatNumber(-1234));
+  AssertEquals('Negative thousands should be formatted',
+    '-1,234', TStringKit.FormatNumber(-1234));
+  AssertEquals('Negative millions should be formatted',
+    '-1,234,567', TStringKit.FormatNumber(-1234567));
+  AssertEquals('Negative numbers should honour a custom separator',
+    '-1.234.567', TStringKit.FormatNumber(-1234567, '.'));
 end;
 
 procedure TStringTests.Test53_FormatFloat;
@@ -874,6 +938,20 @@ begin
   Result := TStringKit.Split('one,two,three,four', ',', 2);
   AssertEquals('MaxSplit should limit number of splits', 3, Length(Result));
   AssertEquals('Last element should contain remaining text', 'three,four', Result[2]);
+
+  Result := TStringKit.Split('a,b,', ',');
+  AssertEquals('Trailing delimiter should preserve an empty entry', 3, Length(Result));
+  AssertEquals('Trailing delimiter should produce an empty final entry', '', Result[2]);
+
+  Result := TStringKit.Split(',a,', ',');
+  AssertEquals('Leading and trailing delimiters should preserve both empty entries', 3, Length(Result));
+  AssertEquals('Leading delimiter should produce an empty first entry', '', Result[0]);
+  AssertEquals('Middle entry should be preserved', 'a', Result[1]);
+  AssertEquals('Trailing delimiter should produce an empty final entry', '', Result[2]);
+
+  Result := TStringKit.Split('a,,b', ',');
+  AssertEquals('Consecutive delimiters should preserve the empty middle entry', 3, Length(Result));
+  AssertEquals('Consecutive delimiters should produce an empty middle entry', '', Result[1]);
   
   // Empty string
   Result := TStringKit.Split('', ',');

@@ -74,7 +74,7 @@ Str := TStringKit.PadCenter(Text, Width, Char);   // Center pad with character
 // Text Transformation
 Str := TStringKit.ReverseText(Text);              // Reverse text
 Str := TStringKit.DuplicateText(Text, Count);     // Duplicate text
-Str := TStringKit.Truncate(Text, MaxLen, '...');  // Truncate with ellipsis
+Str := TStringKit.Truncate(Text, MaxLen, '...');  // Truncate with ellipsis; result never exceeds MaxLen
 
 // Whitespace Manipulation
 Str := TStringKit.CollapseWhitespace(Text);       // Collapse multiple whitespace to single space
@@ -91,7 +91,7 @@ Count := TStringKit.CountWords(Text);             // Count words
 if TStringKit.Contains(Text, SubStr) then         // Check if contains substring
 if TStringKit.StartsWith(Text, Prefix) then       // Check if starts with prefix
 if TStringKit.EndsWith(Text, Suffix) then         // Check if ends with suffix
-Count := TStringKit.CountSubString(Text, SubStr); // Count occurrences of substring
+Count := TStringKit.CountSubString(Text, SubStr); // Count non-overlapping occurrences of substring
 
 // Validation
 if TStringKit.IsValidEmail('user@example.com') then       // Validate email address
@@ -168,7 +168,7 @@ Code := TStringKit.Metaphone('Smith');                 // Get Metaphone code (SM
 // ---------- Text Analysis ----------
 
 // Readability and Analysis
-Score := TStringKit.FleschKincaidReadability(Text);    // Calculate readability (0-100)
+Score := TStringKit.FleschKincaidReadability(Text);    // Calculate Flesch Reading Ease (0-100; legacy name)
 NGrams := TStringKit.GenerateNGrams(Text, 2);          // Generate bigrams
 
 // ---------- Encoding/Decoding ----------

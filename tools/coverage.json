@@ -1,8 +1,8 @@
 ﻿{
     "TStringKitPublicCount":  70,
     "HelperMethodCount":  70,
-    "Covered":  67,
-    "Missing":  3,
+    "Covered":  70,
+    "Missing":  0,
     "Methods":  [
                     {
                         "Name":  "Trim",
@@ -83,17 +83,17 @@
                     },
                     {
                         "Name":  "ReverseText",
-                        "InHelper":  "No",
-                        "HelperName":  "",
-                        "HelperCategory":  "",
-                        "HelperFile":  ""
+                        "InHelper":  "Yes",
+                        "HelperName":  "Reverse",
+                        "HelperCategory":  "Manip",
+                        "HelperFile":  "Manip.intf.inc"
                     },
                     {
                         "Name":  "CapitalizeText",
-                        "InHelper":  "No",
-                        "HelperName":  "",
-                        "HelperCategory":  "",
-                        "HelperFile":  ""
+                        "InHelper":  "Yes",
+                        "HelperName":  "Capitalize",
+                        "HelperCategory":  "Manip",
+                        "HelperFile":  "Manip.intf.inc"
                     },
                     {
                         "Name":  "ExtractMatches",
@@ -363,10 +363,10 @@
                     },
                     {
                         "Name":  "Join",
-                        "InHelper":  "No",
-                        "HelperName":  "",
-                        "HelperCategory":  "",
-                        "HelperFile":  ""
+                        "InHelper":  "Yes",
+                        "HelperName":  "JoinWith",
+                        "HelperCategory":  "Split",
+                        "HelperFile":  "Split.intf.inc"
                     },
                     {
                         "Name":  "Split",

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0] - Unreleased
 
-### Breaking (planned)
+### API evolution (planned)
 
 - Rename selected `TStringKit` members to align with helper naming:
   - `ReverseText` → `Reverse`
@@ -16,8 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Join` → `JoinWith`
 
 Notes:
-- These will be hard renames in 2.0.0. Migration: replace calls per the mapping above.
-- Alternative considered: keep aliases in helper. We opted for simpler, consistent naming.
+- 2.0.0 should introduce these as canonical names while retaining deprecated compatibility aliases where technically practical.
+- Any eventual removal of a compatibility alias should be considered separately in a later major release.
+
+---
+
+## [1.8.1] - 2026-08-22
+
+### Fixed
+
+- Made `LevenshteinSimilarity('', '')` and `LCSSimilarity('', '')` return `1.0` without division by zero; one-empty comparisons return `0.0`.
+- Kept `CountSubString` non-overlapping, including overlapping-looking inputs such as `CountSubString('aaaaa', 'aa') = 2`.
+- Preserved leading, consecutive, and trailing empty `Split` entries when `RemoveEmptyEntries` is `False`.
+- Bounded `Truncate` results to `MaxLength`, including non-positive limits and ellipses longer than the limit.
+- Added thousands separators to negative `FormatNumber` values.
+
+### Testing
+
+- Added FPCUnit regression assertions for the corrected boundaries, similarity invariants, symmetry, and helper delegation.
+
+### CI
+
+- Added GitHub Actions coverage for FPC 3.2.2 on Ubuntu and Windows, including tests, examples, the full helper, representative modular-helper configurations, and the Lazarus package.
+
+### Documentation
+
+- Corrected the public operation count, dependency description, helper alias coverage, Unicode limitations, readability metric description, and the v2 compatibility direction.
+- Clarified that any future hashing work must distinguish data hashes, cryptographic hashes, and password hashing; password storage must use established algorithms and libraries.
+
+### Maintenance
+
+- Removed stale backup and generated artefacts, and ignored `*.backup` files.
 
 ---
 
