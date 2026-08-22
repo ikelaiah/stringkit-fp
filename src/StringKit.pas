@@ -45,6 +45,8 @@ type
   private
     class function IsIdentifierCharacter(const C: Char): Boolean; static;
     class function TokenizeIdentifier(const Text: string): TStringDynArray; static;
+    class function EncodeURL(const Text: string; SpaceAsPlus: Boolean): string; static;
+    class function DecodeURL(const Text: string; PlusAsSpace: Boolean): string; static;
     (*
       @description Checks if a character is considered whitespace.
                    Whitespace characters are space (#32), tab (#9), line feed (#10),
@@ -1832,6 +1834,10 @@ type
         Result := URLDecode('');                // Returns: ''
     *)
     class function URLDecode(const Text: string): string; static;
+    class function PercentEncode(const Text: string): string; static;
+    class function PercentDecode(const Text: string): string; static;
+    class function FormURLEncode(const Text: string): string; static;
+    class function FormURLDecode(const Text: string): string; static;
     
     (*
       @description Encodes binary/text data into Base64 representation using the standard
@@ -1870,6 +1876,7 @@ type
         Result := Decode64('');         // Returns: ''
     *)
     class function Decode64(const Base64Text: string): string; static;
+    class function TryDecode64(const Base64Text: string; out Decoded: string): Boolean; static;
     
     (* -------------------- Number Conversions -------------------- *)
     
@@ -1927,6 +1934,7 @@ type
         Result := FromRoman('');        // Returns: 0
     *)
     class function FromRoman(const RomanNumeral: string): Integer; static;
+    class function TryFromRoman(const RomanNumeral: string; out Value: Integer): Boolean; static;
     
     (*
       @description Converts an integer into its ordinal string representation (e.g., 1 -> '1st', 2 -> '2nd').
@@ -2038,6 +2046,7 @@ type
         Result := HexDecode('');         // Returns: ''
     *)
     class function HexDecode(const HexText: string): string; static;
+    class function TryHexDecode(const HexText: string; out Decoded: string): Boolean; static;
   end;
 
 implementation
@@ -2114,6 +2123,53 @@ begin
       Result[I] := TokenList[I];
   finally
     TokenList.Free;
+  end;
+end;
+
+class function TStringKit.EncodeURL(const Text: string; SpaceAsPlus: Boolean): string;
+const
+  SafeChars = ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~'];
+var
+  I: Integer;
+begin
+  Result := '';
+  for I := 1 to Length(Text) do
+  begin
+    if Text[I] in SafeChars then
+      Result := Result + Text[I]
+    else if SpaceAsPlus and (Text[I] = ' ') then
+      Result := Result + '+'
+    else
+      Result := Result + '%' + IntToHex(Ord(Text[I]), 2);
+  end;
+end;
+
+class function TStringKit.DecodeURL(const Text: string; PlusAsSpace: Boolean): string;
+var
+  I, CharCode: Integer;
+  HexCode: string;
+begin
+  Result := '';
+  I := 1;
+  while I <= Length(Text) do
+  begin
+    if (Text[I] = '%') and (I + 2 <= Length(Text)) then
+    begin
+      HexCode := Copy(Text, I + 1, 2);
+      if MatchesPattern(HexCode, '^[0-9A-Fa-f]{2}$') then
+      begin
+        CharCode := StrToInt('$' + HexCode);
+        Result := Result + Chr(CharCode);
+        Inc(I, 3);
+        Continue;
+      end;
+    end;
+
+    if PlusAsSpace and (Text[I] = '+') then
+      Result := Result + ' '
+    else
+      Result := Result + Text[I];
+    Inc(I);
   end;
 end;
 
@@ -2998,27 +3054,33 @@ begin
 end;
 
 class function TStringKit.Decode64(const Base64Text: string): string;
+begin
+  if not TryDecode64(Base64Text, Result) then
+    Result := '';
+end;
+
+class function TStringKit.TryDecode64(const Base64Text: string; out Decoded: string): Boolean;
 var
-  S: string;
+  CleanText: string;
   I: Integer;
 begin
-  if Base64Text = '' then
-    Exit('');
-
-  // Remove MIME-style whitespace so strict decoder can be used
-  S := '';
+  Decoded := '';
+  CleanText := '';
   for I := 1 to Length(Base64Text) do
     if not (Base64Text[I] in [#9, #10, #13, ' ']) then
-      S := S + Base64Text[I];
+      CleanText := CleanText + Base64Text[I];
 
-  if S = '' then
-    Exit('');
+  if CleanText = '' then
+    Exit(True);
+  if Length(CleanText) mod 4 <> 0 then
+    Exit(False);
 
-  // Strict decoding enforces correct alphabet and padding
   try
-    Result := DecodeStringBase64(S, True);
+    Decoded := DecodeStringBase64(CleanText, True);
+    Result := True;
   except
-    Result := '';
+    Decoded := '';
+    Result := False;
   end;
 end;
 
@@ -3602,68 +3664,34 @@ begin
   Result := ReplaceText(Result, '&nbsp;', ' ');
 end;
 
-class function TStringKit.URLEncode(const Text: string): string;
-const
-  // Characters that don't need encoding
-  SAFE_CHARS = ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~'];
-var
-  I: Integer;
-  HexStr: string;
+class function TStringKit.PercentEncode(const Text: string): string;
 begin
-  Result := '';
-  for I := 1 to Length(Text) do
-  begin
-    if Text[I] in SAFE_CHARS then
-      Result := Result + Text[I]
-    else if Text[I] = ' ' then
-      Result := Result + '+'
-    else
-    begin
-      // Convert character to hexadecimal representation
-      HexStr := IntToHex(Ord(Text[I]), 2);
-      Result := Result + '%' + HexStr;
-    end;
-  end;
+  Result := EncodeURL(Text, False);
+end;
+
+class function TStringKit.PercentDecode(const Text: string): string;
+begin
+  Result := DecodeURL(Text, False);
+end;
+
+class function TStringKit.FormURLEncode(const Text: string): string;
+begin
+  Result := EncodeURL(Text, True);
+end;
+
+class function TStringKit.FormURLDecode(const Text: string): string;
+begin
+  Result := DecodeURL(Text, True);
+end;
+
+class function TStringKit.URLEncode(const Text: string): string;
+begin
+  Result := FormURLEncode(Text);
 end;
 
 class function TStringKit.URLDecode(const Text: string): string;
-var
-  I: Integer;
-  HexCode: string;
-  CharCode: Integer;
 begin
-  Result := '';
-  I := 1;
-  
-  while I <= Length(Text) do
-  begin
-    if Text[I] = '%' then
-    begin
-      // Check if there are at least 2 more characters for a hex code
-      if I + 2 <= Length(Text) then
-      begin
-        HexCode := Copy(Text, I + 1, 2);
-        try
-          // Convert hex to integer and then to character
-          CharCode := StrToInt('$' + HexCode);
-          Result := Result + Chr(CharCode);
-        except
-          // If conversion fails, include the % character as-is
-          Result := Result + '%';
-          Dec(I, 2); // Adjust to process the next two characters normally
-        end;
-        Inc(I, 2); // Skip the two hex characters
-      end
-      else
-        Result := Result + Text[I]; // Incomplete % sequence
-    end
-    else if Text[I] = '+' then
-      Result := Result + ' '
-    else
-      Result := Result + Text[I];
-      
-    Inc(I);
-  end;
+  Result := FormURLDecode(Text);
 end;
 
 class function TStringKit.ToRoman(Value: Integer): string;
@@ -3748,6 +3776,26 @@ begin
       
     PrevValue := CurrValue;
   end;
+end;
+
+class function TStringKit.TryFromRoman(const RomanNumeral: string; out Value: Integer): Boolean;
+var
+  CanonicalRoman: string;
+  ParsedValue: Integer;
+begin
+  Value := 0;
+  CanonicalRoman := UpperCase(RomanNumeral);
+  if CanonicalRoman = '' then
+    Exit(False);
+
+  ParsedValue := FromRoman(CanonicalRoman);
+  if (ParsedValue < 1) or (ParsedValue > 3999) then
+    Exit(False);
+  if ToRoman(ParsedValue) <> CanonicalRoman then
+    Exit(False);
+
+  Value := ParsedValue;
+  Result := True;
 end;
 
 class function TStringKit.ToOrdinal(Value: Integer): string;
@@ -3918,6 +3966,31 @@ begin
     
     Inc(I, 2);
   end;
+end;
+
+class function TStringKit.TryHexDecode(const HexText: string; out Decoded: string): Boolean;
+var
+  I, CharCode: Integer;
+  Temp: string;
+begin
+  Decoded := '';
+  if Length(HexText) mod 2 <> 0 then
+    Exit(False);
+
+  Temp := '';
+  I := 1;
+  while I <= Length(HexText) do
+  begin
+    if not ((HexText[I] in ['0'..'9', 'A'..'F', 'a'..'f']) and
+      (HexText[I + 1] in ['0'..'9', 'A'..'F', 'a'..'f'])) then
+      Exit(False);
+    CharCode := StrToInt('$' + Copy(HexText, I, 2));
+    Temp := Temp + Chr(CharCode);
+    Inc(I, 2);
+  end;
+
+  Decoded := Temp;
+  Result := True;
 end;
 
 end.
