@@ -17,7 +17,7 @@ begin
   S := 'Hello World'.ToSnakeCase;       // 'hello_world'
   if 'user@example.com'.IsValidEmail then ; // True
   S := 'foo'.Encode64;                  // 'Zm9v'
-  S := 'Hello World!'.URLEncode;        // 'Hello+World%21'
+  S := 'Hello World!'.PercentEncode;    // 'Hello%20World%21'
   S := '  Mixed Case  '.Trim.ToUpper;   // Chaining: 'MIXED CASE'
   if 'ABC123'.MatchesPattern('^[A-Z]{3}\d{3}$') then ; // True (regex via helper)
   // Split and Join via helpers
@@ -99,7 +99,7 @@ if TStringKit.IsValidURL('https://example.com') then      // Validate URL
 if TStringKit.IsValidIP('192.168.1.1') then               // Validate IP address (v4 or v6)
 if TStringKit.IsValidIPv4('192.168.1.1') then             // Validate IPv4 address
 if TStringKit.IsValidIPv6('::1') then                     // Validate IPv6 address
-if TStringKit.IsValidDate('2024-01-15', 'yyyy-mm-dd') then // Validate date format
+if TStringKit.IsValidDate('2024-01-15', 'yyyy-mm-dd') then // Validate numeric date components/order
 
 // ---------- Substring Operations ----------
 
@@ -156,8 +156,8 @@ LCS := TStringKit.LongestCommonSubsequence(S1, S2);    // Longest common subsequ
 // Fuzzy Matching
 if TStringKit.IsFuzzyMatch(S1, S2) then               // Default: Levenshtein, threshold 0.7
 if TStringKit.IsFuzzyMatch(S1, S2, 0.8) then          // Custom threshold
-if TStringKit.IsFuzzyMatch(S1, S2, 0.7, 1) then       // Using Jaro-Winkler (method=1)
-if TStringKit.IsFuzzyMatch(S1, S2, 0.7, 2) then       // Using LCS similarity (method=2)
+if TStringKit.IsFuzzyMatch(S1, S2, 0.7, fmJaroWinkler) then // Preferred typed selector
+if TStringKit.IsFuzzyMatch(S1, S2, 0.7, 2) then       // Legacy integer LCS selector
 
 // ---------- Phonetic Algorithms ----------
 
@@ -168,7 +168,8 @@ Code := TStringKit.Metaphone('Smith');                 // Get Metaphone code (SM
 // ---------- Text Analysis ----------
 
 // Readability and Analysis
-Score := TStringKit.FleschKincaidReadability(Text);    // Calculate Flesch Reading Ease (0-100; legacy name)
+Score := TStringKit.FleschReadingEase(Text);           // Flesch Reading Ease (heuristic English syllables)
+Grade := TStringKit.FleschKincaidGradeLevel(Text);     // Flesch-Kincaid Grade Level
 NGrams := TStringKit.GenerateNGrams(Text, 2);          // Generate bigrams
 
 // ---------- Encoding/Decoding ----------
@@ -176,8 +177,10 @@ NGrams := TStringKit.GenerateNGrams(Text, 2);          // Generate bigrams
 // HTML and URL Encoding
 Encoded := TStringKit.HTMLEncode('<div>');             // HTML encoding
 Decoded := TStringKit.HTMLDecode('&lt;div&gt;');       // HTML decoding
-Encoded := TStringKit.URLEncode('a b');                // URL encoding (a+b)
-Decoded := TStringKit.URLDecode('a+b');                // URL decoding
+Encoded := TStringKit.PercentEncode('a b');            // URI percent encoding (a%20b)
+Encoded := TStringKit.FormURLEncode('a b');            // Form encoding (a+b)
+Decoded := TStringKit.PercentDecode('a+b');            // Keeps '+' literal
+Decoded := TStringKit.FormURLDecode('a+b');            // Decodes '+' as a space
 
 // Base64 Encoding
 Encoded := TStringKit.Encode64('foo');                  // Base64 encode (Zm9v)
@@ -188,4 +191,9 @@ Decoded := TStringKit.Decode64('Zg==');                 // Base64 decode with pa
 // Hex Encoding
 HexStr := TStringKit.HexEncode('abc');                   // Hex encoding (616263)
 Original := TStringKit.HexDecode('616263');              // Hex decoding
+if TStringKit.TryHexDecode('616263', Original) then ;   // Strict decoder; False clears Original
+if TStringKit.TryDecode64('Zm9v', Decoded) then ;        // Strict Base64 decoder
+if TStringKit.TryFromRoman('MMXXVI', Num) then ;         // Strict canonical 1..3999 Roman parser
 ```
+
+Contracts: identifier casing is ASCII/byte-oriented (`XMLHttpRequest` → `xml_http_request`); digits remain in their current token and an uppercase word after digits starts a new token. `Try...` methods return `False` and clear their output for malformed external input. Legacy `URLEncode`/`URLDecode` are form-style aliases, while legacy `HexDecode` and `FromRoman` retain their permissive behavior.

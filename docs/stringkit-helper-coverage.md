@@ -3,6 +3,7 @@
 Notes:
 - “Is Available in String Helper” considers exact or aliased helper names.
 - 3 TStringKit methods have different helper names: ReverseText → Reverse, CapitalizeText → Capitalize, Join → JoinWith.
+- Measured for v1.9.0 with `tools/count_tstringkit_public.ps1`: 80 public operations covered, 0 missing.
 # Summary Table
 
 Below is the full coverage summary with your requested columns.
@@ -65,26 +66,35 @@ Below is the full coverage summary with your requested columns.
 | Phonetic | Soundex | Yes | Soundex | Phonetic |
 | Phonetic | Metaphone | Yes | Metaphone | Phonetic |
 | Phonetic | CountWords | Yes | CountWords | Phonetic |
+| Phonetic | FleschReadingEase | Yes | FleschReadingEase | Phonetic |
 | Phonetic | FleschKincaidReadability | Yes | FleschKincaidReadability | Phonetic |
+| Phonetic | FleschKincaidGradeLevel | Yes | FleschKincaidGradeLevel | Phonetic |
 | Phonetic | GenerateNGrams | Yes | GenerateNGrams | Phonetic |
 | Encoding | HTMLEncode | Yes | HTMLEncode | Encode |
 | Encoding | HTMLDecode | Yes | HTMLDecode | Encode |
 | Encoding | URLEncode | Yes | URLEncode | Encode |
 | Encoding | URLDecode | Yes | URLDecode | Encode |
+| Encoding | PercentEncode | Yes | PercentEncode | Encode |
+| Encoding | PercentDecode | Yes | PercentDecode | Encode |
+| Encoding | FormURLEncode | Yes | FormURLEncode | Encode |
+| Encoding | FormURLDecode | Yes | FormURLDecode | Encode |
 | Encoding | Encode64 | Yes | Encode64 | Encode |
 | Encoding | Decode64 | Yes | Decode64 | Encode |
+| Encoding | TryDecode64 | Yes | TryDecode64 | Encode |
 | Numeric | ToRoman | Yes | ToRoman | Numeric |
 | Numeric | FromRoman | Yes | FromRoman | Numeric |
+| Numeric | TryFromRoman | Yes | TryFromRoman | Numeric |
 | Numeric | ToOrdinal | Yes | ToOrdinal | Numeric |
 | Numeric | NumberToWords | Yes | NumberToWords | Numeric |
 | Encoding | HexEncode | Yes | HexEncode | Encode |
 | Encoding | HexDecode | Yes | HexDecode | Encode |
+| Encoding | TryHexDecode | Yes | TryHexDecode | Encode |
 
 # Summary
 
-- TStringKit public methods: 70
-- String Helper methods: 70
-- All 70 are available in the helper (3 via alias names).
+- TStringKit public methods: 80
+- String Helper method names: 79
+- All 80 are available in the helper (3 via alias names), as measured by the coverage tool.
   - ReverseText -> Reverse
   - CapitalizeText -> Capitalize
   - Join -> JoinWith

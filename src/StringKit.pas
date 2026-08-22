@@ -1071,7 +1071,7 @@ type
                     0: Levenshtein Similarity (default)
                     1: Jaro-Winkler Similarity
                     2: Longest Common Subsequence (LCS) Similarity
-                    Other values result in a similarity of 0.0.
+                    Other values return False. Prefer the TFuzzyMethod overload in new code.
       
       @returns True if the calculated similarity is greater than or equal to the Threshold,
                False otherwise. Also returns True if S1 and S2 are identical. Returns False
@@ -1095,6 +1095,7 @@ type
         Result := IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2); // LCS Similarity = 0.625. Returns: True
     *)
     class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; overload; static;
+    (* @description Type-safe fuzzy matching. The enum values map exactly to legacy methods 0, 1, and 2. *)
     class function IsFuzzyMatch(const S1, S2: string; Threshold: Double; Method: TFuzzyMethod): Boolean; overload; static;
     
     (* -------------------- Case Conversion Variants -------------------- *)
@@ -1127,7 +1128,8 @@ type
     (*
       @description Converts a string to camelCase format. The first word starts lowercase,
                    and subsequent words start with an uppercase letter, with all other letters
-                   in lowercase. Words are identified using GetWords (alphanumeric sequences).
+                   in lowercase. An internal ASCII identifier tokenizer recognizes separators,
+                   lower-to-upper transitions, and common acronym boundaries.
                    No separators are included in the output.
       
       @usage Use for converting phrases or identifiers into camelCase variable or function names,
@@ -1137,14 +1139,14 @@ type
       
       @returns The string in camelCase format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on UpperCase/LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToCamelCase('hello world');        // Returns: 'helloWorld'
         Result := ToCamelCase('Hello World');        // Returns: 'helloWorld'
         Result := ToCamelCase('__some_variable-name'); // Returns: 'someVariableName'
-        Result := ToCamelCase('SingleWord');         // Returns: 'singleword'
+        Result := ToCamelCase('SingleWord');         // Returns: 'singleWord'
         Result := ToCamelCase('word');               // Returns: 'word'
         Result := ToCamelCase('123 abc');            // Returns: '123Abc'
         Result := ToCamelCase('');                   // Returns: ''
@@ -1155,7 +1157,7 @@ type
     (*
       @description Converts a string to PascalCase (or UpperCamelCase) format. Each word starts
                    with an uppercase letter, with all other letters in lowercase. Words are
-                   identified using GetWords (alphanumeric sequences). No separators are
+                   identified with the internal ASCII identifier tokenizer. No separators are
                    included in the output.
       
       @usage Use for converting phrases or identifiers into PascalCase class names or type names,
@@ -1165,14 +1167,14 @@ type
       
       @returns The string in PascalCase format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on UpperCase/LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToPascalCase('hello world');        // Returns: 'HelloWorld'
         Result := ToPascalCase('Hello World');        // Returns: 'HelloWorld'
         Result := ToPascalCase('__some_variable-name'); // Returns: 'SomeVariableName'
-        Result := ToPascalCase('SingleWord');         // Returns: 'Singleword' (Note: Lowercases rest)
+        Result := ToPascalCase('SingleWord');         // Returns: 'SingleWord'
         Result := ToPascalCase('word');               // Returns: 'Word'
         Result := ToPascalCase('123 abc');            // Returns: '123Abc'
         Result := ToPascalCase('');                   // Returns: ''
@@ -1182,8 +1184,8 @@ type
     
     (*
       @description Converts a string to snake_case format. All words are converted to lowercase
-                   and joined by underscore characters ('_'). Words are identified using GetWords
-                   (alphanumeric sequences).
+                   and joined by underscore characters ('_'). Words are identified with the
+                   internal ASCII identifier tokenizer.
       
       @usage Use for converting phrases or identifiers into snake_case variable or function names,
              common in languages like Python, Ruby.
@@ -1192,14 +1194,14 @@ type
       
       @returns The string in snake_case format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToSnakeCase('hello world');        // Returns: 'hello_world'
         Result := ToSnakeCase('Hello World');        // Returns: 'hello_world'
         Result := ToSnakeCase('__some_variable-name'); // Returns: 'some_variable_name'
-        Result := ToSnakeCase('SingleWord');         // Returns: 'singleword'
+        Result := ToSnakeCase('SingleWord');         // Returns: 'single_word'
         Result := ToSnakeCase('word');               // Returns: 'word'
         Result := ToSnakeCase('123 abc');            // Returns: '123_abc'
         Result := ToSnakeCase('');                   // Returns: ''
@@ -1209,8 +1211,8 @@ type
     
     (*
       @description Converts a string to kebab-case format. All words are converted to lowercase
-                   and joined by hyphen characters ('-'). Words are identified using GetWords
-                   (alphanumeric sequences).
+                   and joined by hyphen characters ('-'). Words are identified with the
+                   internal ASCII identifier tokenizer.
       
       @usage Use for converting phrases or identifiers into kebab-case, common in URLs, CSS class names,
              and HTML attributes.
@@ -1219,14 +1221,14 @@ type
       
       @returns The string in kebab-case format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToKebabCase('hello world');        // Returns: 'hello-world'
         Result := ToKebabCase('Hello World');        // Returns: 'hello-world'
         Result := ToKebabCase('__some_variable_name'); // Returns: 'some-variable-name'
-        Result := ToKebabCase('SingleWord');         // Returns: 'singleword'
+        Result := ToKebabCase('SingleWord');         // Returns: 'single-word'
         Result := ToKebabCase('word');               // Returns: 'word'
         Result := ToKebabCase('123 abc');            // Returns: '123-abc'
         Result := ToKebabCase('');                   // Returns: ''
@@ -1274,10 +1276,9 @@ type
                Allows alphanumeric characters, special chars (@:%._+~#=) in domain,
                and query strings with alphanumeric chars and special chars (&/?=)
       
-      @warning These regex patterns cover many common URLs but might not match all valid URL formats
-                (e.g., internationalized domain names, newer TLDs, file URLs, data URLs).
-                They also don't check if the URL actually exists or is reachable. Case-sensitive matching for domain TLD part ([a-z]{2,6}).
-                Relies on MatchesPattern.
+      @warning This practical common-syntax check accepts mixed-case TLDs of 2 to 63 letters,
+                but is not a complete URL parser and does not check reachability, IDNs, file URLs,
+                or data URLs. Relies on MatchesPattern.
       
       @example
         Result := IsValidURL('http://example.com');        // Returns: True
@@ -1662,8 +1663,7 @@ type
     class function CountWords(const Text: string): Integer; static;
     
     (*
-      @description Calculates the Flesch Reading Ease score for a given text. The public name is
-                   retained for compatibility, but this is not the Flesch-Kincaid Grade Level formula. This score
+      @description Calculates the Flesch Reading Ease score for a given text. This score
                    estimates the readability of English text, with higher scores indicating easier
                    readability (typically on a 0-100 scale).
       
@@ -1684,18 +1684,20 @@ type
                 Assumes English text. Score is capped between 0 and 100.
       
       @example // Scores are approximate due to syllable counting method
-        Text1 := 'The quick brown fox jumps over the lazy dog.'; // 9 words, 1 sentence, ~10 syllables
-        // Score ~ 206.835 - 1.015*(9/1) - 84.6*(10/9) = 206.835 - 9.135 - 94 = ~103.7 (capped at 100)
-        Result := FleschKincaidReadability(Text1); // Should be high (easy) -> ~100.0
+        Text1 := 'The quick brown fox jumps over the lazy dog.'; // 9 words, 1 sentence, ~11 syllables
+        // Score ~ 206.835 - 1.015*(9/1) - 84.6*(11/9) = ~94.3
+        Result := FleschReadingEase(Text1); // High (easy) score -> ~94.3
         
         Text2 := 'This sentence, taken as a standalone example, is moderately complex.'; // 11 words, 1 sentence, ~21 syllables
         // Score ~ 206.835 - 1.015*(11/1) - 84.6*(21/11) = 206.835 - 11.165 - 161.5 = ~34.17
-        Result := FleschKincaidReadability(Text2); // Should be lower (harder) -> ~34.2
+        Result := FleschReadingEase(Text2); // Should be lower (harder) -> ~34.2
         
-        Result := FleschKincaidReadability(''); // Returns: 0.0
+        Result := FleschReadingEase(''); // Returns: 0.0
     *)
     class function FleschReadingEase(const Text: string): Double; static;
+    (* @description Legacy compatibility alias for FleschReadingEase; this is not a grade-level formula. *)
     class function FleschKincaidReadability(const Text: string): Double; static;
+    (* @description Calculates Flesch-Kincaid Grade Level using heuristic English syllable counts. *)
     class function FleschKincaidGradeLevel(const Text: string): Double; static;
     
     (*
@@ -1788,8 +1790,7 @@ type
     class function HTMLDecode(const Text: string): string; static;
     
     (*
-      @description Encodes a string for safe inclusion in a URL component (like a query parameter value)
-                   by percent-encoding unsafe characters. Spaces are encoded as '+'.
+      @description Legacy form-style alias for FormURLEncode. Spaces are encoded as '+'.
       
       @usage Use when constructing URLs dynamically to ensure special characters in parameters
              or path segments don't break the URL structure or cause misinterpretation.
@@ -1802,9 +1803,8 @@ type
                   Safe characters (A-Z, a-z, 0-9, '-', '_', '.', '~') are not encoded.
                   Other bytes are encoded as %XX.
       
-      @warning This specific encoding (space to '+') is typically for query string parameters.
-                For encoding path segments, RFC 3986 suggests encoding space as %20.
-                Assumes single-byte characters; behavior with multi-byte UTF-8 might depend on Ord() interpretation.
+      @warning For URI percent encoding, use PercentEncode, which uses %20 for spaces.
+                All URL encoding APIs operate on bytes rather than Unicode characters.
       
       @example
         Result := URLEncode('Hello World!');     // Returns: 'Hello+World%21'
@@ -1815,9 +1815,8 @@ type
     class function URLEncode(const Text: string): string; static;
     
     (*
-      @description Decodes a URL-encoded string (specifically, application/x-www-form-urlencoded format)
-                   back into its original form. Converts '+' back to space and %XX hex sequences
-                   to their corresponding characters.
+      @description Legacy form-style alias for FormURLDecode. Converts '+' back to spaces and
+                   decodes valid %XX byte sequences.
       
       @usage Use to interpret data received from URL parameters or form submissions.
       
@@ -1825,10 +1824,8 @@ type
       
       @returns The decoded string.
       
-      @warning Assumes the input follows common URL encoding rules (space as '+', others as %XX).
-                Handles potential errors during hex conversion (%XX) by skipping the invalid sequence
-                and including the '%' literally. Assumes %XX represents single bytes; multi-byte
-                character reconstruction depends on the context where the decoded string is used.
+      @warning For percent-decoding that preserves literal '+', use PercentDecode. Invalid percent
+                sequences are preserved. All URL decoding APIs operate on bytes rather than Unicode characters.
       
       @example
         Result := URLDecode('Hello+World%21');     // Returns: 'Hello World!'
@@ -1838,9 +1835,13 @@ type
         Result := URLDecode('');                // Returns: ''
     *)
     class function URLDecode(const Text: string): string; static;
+    (* @description Percent-encodes bytes for URI components; spaces become %20. *)
     class function PercentEncode(const Text: string): string; static;
+    (* @description Percent-decodes bytes and preserves literal + characters. *)
     class function PercentDecode(const Text: string): string; static;
+    (* @description Encodes application/x-www-form-urlencoded data; spaces become +. *)
     class function FormURLEncode(const Text: string): string; static;
+    (* @description Decodes application/x-www-form-urlencoded data; + becomes a space. *)
     class function FormURLDecode(const Text: string): string; static;
     
     (*
@@ -1880,6 +1881,7 @@ type
         Result := Decode64('');         // Returns: ''
     *)
     class function Decode64(const Base64Text: string): string; static;
+    (* @description Strict non-throwing Base64 decoder. False clears Decoded for malformed input. *)
     class function TryDecode64(const Base64Text: string; out Decoded: string): Boolean; static;
     
     (* -------------------- Number Conversions -------------------- *)
@@ -1938,6 +1940,7 @@ type
         Result := FromRoman('');        // Returns: 0
     *)
     class function FromRoman(const RomanNumeral: string): Integer; static;
+    (* @description Strict canonical Roman parser for 1..3999. False clears Value. *)
     class function TryFromRoman(const RomanNumeral: string; out Value: Integer): Boolean; static;
     
     (*
@@ -2050,6 +2053,7 @@ type
         Result := HexDecode('');         // Returns: ''
     *)
     class function HexDecode(const HexText: string): string; static;
+    (* @description Strict non-throwing hexadecimal decoder. False clears Decoded for malformed input. *)
     class function TryHexDecode(const HexText: string; out Decoded: string): Boolean; static;
   end;
 
@@ -2553,6 +2557,7 @@ begin
 
   M := Length(S1);
   N := Length(S2);
+  D := nil;
   SetLength(D, M + 1, N + 1);
 
   for I := 0 to M do
@@ -2619,6 +2624,8 @@ begin
     MatchWindow := 0;
 
   // Initialize matching arrays
+  Matches1 := nil;
+  Matches2 := nil;
   SetLength(Matches1, Length(S1));
   SetLength(Matches2, Length(S2));
   for I := 0 to Length(S1) - 1 do
@@ -2717,7 +2724,8 @@ begin
   // Handle empty strings
   if (S1 = '') or (S2 = '') then
     Exit('');
-    
+
+  LCS := nil;
   SetLength(LCS, Length(S1) + 1, Length(S2) + 1);
 
   for I := 0 to Length(S1) do

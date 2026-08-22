@@ -1,7 +1,7 @@
 ﻿{
-    "TStringKitPublicCount":  70,
-    "HelperMethodCount":  70,
-    "Covered":  70,
+    "TStringKitPublicCount":  80,
+    "HelperMethodCount":  79,
+    "Covered":  80,
     "Missing":  0,
     "Methods":  [
                     {
@@ -257,6 +257,13 @@
                         "HelperFile":  "Compare.intf.inc"
                     },
                     {
+                        "Name":  "IsFuzzyMatch",
+                        "InHelper":  "Yes",
+                        "HelperName":  "IsFuzzyMatch",
+                        "HelperCategory":  "Compare",
+                        "HelperFile":  "Compare.intf.inc"
+                    },
+                    {
                         "Name":  "ToTitleCase",
                         "InHelper":  "Yes",
                         "HelperName":  "ToTitleCase",
@@ -397,9 +404,23 @@
                         "HelperFile":  "Phonetic.intf.inc"
                     },
                     {
+                        "Name":  "FleschReadingEase",
+                        "InHelper":  "Yes",
+                        "HelperName":  "FleschReadingEase",
+                        "HelperCategory":  "Phonetic",
+                        "HelperFile":  "Phonetic.intf.inc"
+                    },
+                    {
                         "Name":  "FleschKincaidReadability",
                         "InHelper":  "Yes",
                         "HelperName":  "FleschKincaidReadability",
+                        "HelperCategory":  "Phonetic",
+                        "HelperFile":  "Phonetic.intf.inc"
+                    },
+                    {
+                        "Name":  "FleschKincaidGradeLevel",
+                        "InHelper":  "Yes",
+                        "HelperName":  "FleschKincaidGradeLevel",
                         "HelperCategory":  "Phonetic",
                         "HelperFile":  "Phonetic.intf.inc"
                     },
@@ -439,6 +460,34 @@
                         "HelperFile":  "Encode.intf.inc"
                     },
                     {
+                        "Name":  "PercentEncode",
+                        "InHelper":  "Yes",
+                        "HelperName":  "PercentEncode",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
+                        "Name":  "PercentDecode",
+                        "InHelper":  "Yes",
+                        "HelperName":  "PercentDecode",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
+                        "Name":  "FormURLEncode",
+                        "InHelper":  "Yes",
+                        "HelperName":  "FormURLEncode",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
+                        "Name":  "FormURLDecode",
+                        "InHelper":  "Yes",
+                        "HelperName":  "FormURLDecode",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
                         "Name":  "Encode64",
                         "InHelper":  "Yes",
                         "HelperName":  "Encode64",
@@ -453,6 +502,13 @@
                         "HelperFile":  "Encode.intf.inc"
                     },
                     {
+                        "Name":  "TryDecode64",
+                        "InHelper":  "Yes",
+                        "HelperName":  "TryDecode64",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
                         "Name":  "ToRoman",
                         "InHelper":  "Yes",
                         "HelperName":  "ToRoman",
@@ -463,6 +519,13 @@
                         "Name":  "FromRoman",
                         "InHelper":  "Yes",
                         "HelperName":  "FromRoman",
+                        "HelperCategory":  "Numeric",
+                        "HelperFile":  "Numeric.intf.inc"
+                    },
+                    {
+                        "Name":  "TryFromRoman",
+                        "InHelper":  "Yes",
+                        "HelperName":  "TryFromRoman",
                         "HelperCategory":  "Numeric",
                         "HelperFile":  "Numeric.intf.inc"
                     },
@@ -491,6 +554,13 @@
                         "Name":  "HexDecode",
                         "InHelper":  "Yes",
                         "HelperName":  "HexDecode",
+                        "HelperCategory":  "Encode",
+                        "HelperFile":  "Encode.intf.inc"
+                    },
+                    {
+                        "Name":  "TryHexDecode",
+                        "InHelper":  "Yes",
+                        "HelperName":  "TryHexDecode",
                         "HelperCategory":  "Encode",
                         "HelperFile":  "Encode.intf.inc"
                     }

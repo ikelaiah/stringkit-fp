@@ -31,6 +31,7 @@ type
     procedure ShowPatternMatching;     // Illustrates regex pattern matching capabilities
     procedure ShowStringAnalysis;      // Demonstrates string analysis functions
     procedure ShowStringExtraction;    // Shows string extraction and substring operations
+    procedure ShowVersion19Contracts;  // Demonstrates explicit v1.9.0 APIs
   end;
 
 // TTextProcessor
@@ -138,6 +139,27 @@ begin
   WriteLn;
 end;
 
+procedure TTextProcessor.ShowVersion19Contracts;
+var
+  Decoded: string;
+  RomanValue: Integer;
+begin
+  WriteLn('v1.9.0 API Contracts:');
+  WriteLn('---------------------');
+  WriteLn('Identifier case: ', TStringKit.ToSnakeCase('HelloWorld'));
+  WriteLn('Typed fuzzy match: ', TStringKit.IsFuzzyMatch('colour', 'color', 0.75, fmLevenshtein));
+  if TStringKit.TryHexDecode('48656C6C6F', Decoded) then
+    WriteLn('Strict Hex: ', Decoded);
+  if TStringKit.TryDecode64('SGVsbG8=', Decoded) then
+    WriteLn('Strict Base64: ', Decoded);
+  if TStringKit.TryFromRoman('MMXXVI', RomanValue) then
+    WriteLn('Strict Roman: ', RomanValue);
+  WriteLn('Percent encoding: ', TStringKit.PercentEncode('hello world'));
+  WriteLn('Form encoding: ', TStringKit.FormURLEncode('hello world'));
+  WriteLn('Flesch Reading Ease: ', FormatFloat('0.00', TStringKit.FleschReadingEase(FText)));
+  WriteLn;
+end;
+
 procedure TTextProcessor.ProcessText;
 begin
   // Main processing method that demonstrates all capabilities
@@ -150,6 +172,7 @@ begin
   ShowPatternMatching;
   ShowStringAnalysis;
   ShowStringExtraction;
+  ShowVersion19Contracts;
 end;
 
 var

@@ -1406,6 +1406,10 @@ begin
     'html5_parser', TStringKit.ToSnakeCase('HTML5Parser'));
   AssertEquals('Uppercase words after digits should be separate tokens',
     'version2_api', TStringKit.ToSnakeCase('Version2API'));
+  AssertEquals('Mixed-case IPv6 identifiers should keep the version token intact',
+    'ipv6_address', TStringKit.ToSnakeCase('IPv6Address'));
+  AssertEquals('Digit runs should remain attached to their preceding acronym',
+    'gl11_version', TStringKit.ToSnakeCase('GL11Version'));
   AssertEquals('snake_case should be idempotent',
     TStringKit.ToSnakeCase('XMLHttpRequest'),
     TStringKit.ToSnakeCase(TStringKit.ToSnakeCase('XMLHttpRequest')));
