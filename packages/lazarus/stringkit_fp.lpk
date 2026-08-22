@@ -21,7 +21,7 @@
         <CustomOptions Value="-FcUTF8"/>
       </Other>
     </CompilerOptions>
-    <Description Value="Comprehensive string manipulation library providing 70+ static methods and string helpers for validation, case conversion, pattern matching, fuzzy algorithms, phonetic matching, text analysis, and web encoding. Zero external dependencies - uses only Free Pascal RTL."/>
+    <Description Value="Comprehensive string manipulation library providing 70 public TStringKit operations with corresponding string helper coverage for validation, case conversion, pattern matching, fuzzy algorithms, phonetic matching, text analysis, and web encoding. Uses Free Pascal RTL/FCL components only; no third-party dependencies."/>
     <License Value="MIT License
 
 Copyright (c) 2025 ikelaiah
@@ -43,7 +43,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. "/>
-    <Version Major="1" Minor="8"/>
+    <Version Major="1" Minor="8" Release="1"/>
     <Files>
       <Item>
         <Filename Value="..\..\src\StringKit.pas"/>

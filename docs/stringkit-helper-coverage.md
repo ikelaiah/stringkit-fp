@@ -7,7 +7,7 @@ Notes:
 
 Below is the full coverage summary with your requested columns.
 
-| Category | Name in TStringKit | Is Available in String Helper | Name in String Helper | Caterogy in String Helper |
+| Category | Name in TStringKit | Is Available in String Helper | Name in String Helper | Category in String Helper |
 |---|---|---|---|---|
 | Manipulation | Trim | Yes | Trim | Manip |
 | Manipulation | TrimLeft | Yes | TrimLeft | Manip |
@@ -20,8 +20,8 @@ Below is the full coverage summary with your requested columns.
 | Manipulation | CollapseWhitespace | Yes | CollapseWhitespace | Manip |
 | Manipulation | RemoveWhitespace | Yes | RemoveWhitespace | Manip |
 | Manipulation | DuplicateText | Yes | DuplicateText | Manip |
-| Manipulation | ReverseText | No | Reverse | Manip |
-| Manipulation | CapitalizeText | No | Capitalize | Manip |
+| Manipulation | ReverseText | Yes | Reverse | Manip |
+| Manipulation | CapitalizeText | Yes | Capitalize | Manip |
 | Matching | ExtractMatches | Yes | ExtractMatches | Match |
 | Matching | ExtractAllMatches | Yes | ExtractAllMatches | Match |
 | Matching | MatchesPattern | Yes | MatchesPattern | Match |
@@ -60,7 +60,7 @@ Below is the full coverage summary with your requested columns.
 | Formatting | FormatFileSize | Yes | FormatFileSize | Format |
 | Formatting | FormatNumber | Yes | FormatNumber | Format |
 | Formatting | FormatFloat | Yes | FormatFloat | Format |
-| Split | Join | No | JoinWith | Split |
+| Split | Join | Yes | JoinWith | Split |
 | Split | Split | Yes | Split | Split |
 | Phonetic | Soundex | Yes | Soundex | Phonetic |
 | Phonetic | Metaphone | Yes | Metaphone | Phonetic |

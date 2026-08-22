@@ -1650,7 +1650,8 @@ type
     class function CountWords(const Text: string): Integer; static;
     
     (*
-      @description Calculates the Flesch-Kincaid Reading Ease score for a given text. This score
+      @description Calculates the Flesch Reading Ease score for a given text. The public name is
+                   retained for compatibility, but this is not the Flesch-Kincaid Grade Level formula. This score
                    estimates the readability of English text, with higher scores indicating easier
                    readability (typically on a 0-100 scale).
       
@@ -1659,7 +1660,7 @@ type
       
       @param Text The text to analyze.
       
-      @returns The Flesch-Kincaid Reading Ease score (Double), typically between 0 and 100.
+      @returns The Flesch Reading Ease score (Double), typically between 0 and 100.
                Returns 0 if the text contains no words.
       
       @references Formula: `206.835 - 1.015 * (TotalWords / TotalSentences) - 84.6 * (TotalSyllables / TotalWords)`
@@ -3401,7 +3402,7 @@ begin
       Inc(Syllables);
   end;
   
-  // Calculate Flesch-Kincaid Reading Ease score
+  // Calculate Flesch Reading Ease score (keeps the legacy public method name)
   // Formula: 206.835 - 1.015 * (words/sentences) - 84.6 * (syllables/words)
   Result := 206.835 - 1.015 * (WordCount / Sentences) - 84.6 * (Syllables / WordCount);
   

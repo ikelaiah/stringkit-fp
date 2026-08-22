@@ -11,8 +11,8 @@
 | CollapseWhitespace | Yes | CollapseWhitespace | Manip | Manip.intf.inc |
 | RemoveWhitespace | Yes | RemoveWhitespace | Manip | Manip.intf.inc |
 | DuplicateText | Yes | DuplicateText | Manip | Manip.intf.inc |
-| ReverseText | No |  |  |  |
-| CapitalizeText | No |  |  |  |
+| ReverseText | Yes | Reverse | Manip | Manip.intf.inc |
+| CapitalizeText | Yes | Capitalize | Manip | Manip.intf.inc |
 | ExtractMatches | Yes | ExtractMatches | Match | Match.intf.inc |
 | ExtractAllMatches | Yes | ExtractAllMatches | Match | Match.intf.inc |
 | MatchesPattern | Yes | MatchesPattern | Match | Match.intf.inc |
@@ -51,7 +51,7 @@
 | FormatFileSize | Yes | FormatFileSize | Format | Format.intf.inc |
 | FormatNumber | Yes | FormatNumber | Format | Format.intf.inc |
 | FormatFloat | Yes | FormatFloat | Format | Format.intf.inc |
-| Join | No |  |  |  |
+| Join | Yes | JoinWith | Split | Split.intf.inc |
 | Split | Yes | Split | Split | Split.intf.inc |
 | Soundex | Yes | Soundex | Phonetic | Phonetic.intf.inc |
 | Metaphone | Yes | Metaphone | Phonetic | Phonetic.intf.inc |

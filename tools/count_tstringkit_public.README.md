@@ -35,21 +35,19 @@ The script resolves paths relative to its own location, so either approach works
 ## Interpreting the results
 - `TStringKit public count`: Number of public `class function/procedure` members declared in `TStringKit`.
 - `Helper method count`: Unique function names found across `src/inc/*.intf.inc`.
-- `Covered`: Number of `TStringKit` methods that have a same-named function in the helper set (or that you consider aliased if you modify the script to support aliases).
+- `Covered`: Number of `TStringKit` methods available through the helper, including the documented aliases.
 - `Missing`: Public methods without a same-named helper function.
 
 The `coverage.md` table columns:
 - `Method` — the public `TStringKit` method name
-- `In Helper` — `Yes` if present in helper (same name), `No` otherwise
+- `In Helper` — `Yes` if present in the helper under the same name or a documented alias, `No` otherwise
 
 ## Notes & troubleshooting
 - If you run the script line-by-line in a console/ISE, `$MyInvocation.MyCommand.Path` may be unset. Prefer running the script file as shown above.
 - If you see a path resolution error, ensure your workspace layout matches:
   - `src/StringKit.pas`
   - `src/inc/*.intf.inc`
-- The script currently matches helper names exactly. If you have known aliases (e.g., `ReverseText` ↔ `Reverse`, `Join` ↔ `JoinWith`), you can either:
-  1) add alias entries in the helper, or
-  2) extend the script to translate known aliases before comparison.
+- The script recognises the documented aliases `ReverseText` → `Reverse`, `CapitalizeText` → `Capitalize`, and `Join` → `JoinWith`.
 
 ## How it works (brief)
 1. Reads `src/StringKit.pas` and slices the interface section (before the `implementation` keyword).
@@ -58,7 +56,7 @@ The `coverage.md` table columns:
 4. Compares sets and writes results.
 
 ## Updating or extending
-- To support aliases, add a small mapping inside the script before comparison, e.g.:
+- To add another documented alias, extend the `$aliasMap` inside the script, e.g.:
 
 ```powershell
 $aliasMap = @{ ReverseText = 'Reverse'; CapitalizeText = 'Capitalize'; Join = 'JoinWith' }

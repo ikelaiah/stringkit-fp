@@ -81,11 +81,19 @@ try {
   }
 
   $rows = foreach ($n in $tkNames) {
-    $inHelper = $hSet.Contains($n)
-    $hInfo = if ($inHelper) { $hMap[$n] } else { $null }
+    $helperName = if ($hSet.Contains($n)) {
+      $n
+    }
+    elseif ($aliasMap.Contains($n)) {
+      $aliasMap[$n]
+    }
+    else {
+      ''
+    }
+    $hInfo = if ($helperName) { $hMap[$helperName] } else { $null }
     [PSCustomObject]@{
       Name            = $n
-      InHelper        = if ($inHelper) { 'Yes' } else { 'No' }
+      InHelper        = if ($hInfo) { 'Yes' } else { 'No' }
       HelperName      = if ($hInfo) { $hInfo.Name } else { '' }
       HelperCategory  = if ($hInfo) { $hInfo.Category } else { '' }
       HelperFile      = if ($hInfo) { $hInfo.File } else { '' }
@@ -111,7 +119,7 @@ try {
     "TStringKit public count: $tkCount"
     "Helper method count: $($hNames.Count)"
     "Covered: $covered"
-    "Missing (or named differently in helper): $missing"
+    "Missing: $missing"
     $aliasSummary
   ) | Set-Content -Path $summaryPath -Encoding UTF8
 

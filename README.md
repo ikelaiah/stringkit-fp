@@ -4,9 +4,9 @@
 [![Lazarus](https://img.shields.io/badge/Lazarus-4.0+-blue.svg)](https://www.lazarus-ide.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![Documentation](https://img.shields.io/badge/Docs-Available-brightgreen.svg)](docs/)
-[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](tests/)
+[![CI](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/Status-Ready%20to%20Weave-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/Version-1.8.0-blueviolet.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.8.1-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.8.1)
 
 
 <p align="center">
@@ -38,8 +38,8 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 
 **🎯 Key Advantages:**
 
-- 🧶 **Comprehensive**: 90+ string operations covering validation, transformation, analysis, and encoding
-- 🪡 **Zero Dependencies**: Uses only standard Free Pascal RTL - no external libraries required
+- 🧶 **Comprehensive**: 70 public `TStringKit` operations with corresponding helper coverage, spanning validation, transformation, analysis, and encoding
+- 🪡 **Zero Dependencies**: Uses Free Pascal RTL/FCL components only; no third-party dependencies
 - 📏 **Advanced Analysis**: Readability scoring, n-gram generation, and statistical text analysis
 - 🔍 **Robust Validation**: Regex patterns, format checking, and custom validation rules
 - 🌐 **Web-Ready**: URL encoding, HTML escaping, and modern web standards support
@@ -107,7 +107,7 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 *Statistical analysis and text insights*
 
 - `CountWords()`, `GetWords()` - Word counting and extraction
-- `FleschKincaidReadability()` - Readability scoring for content assessment
+- `FleschKincaidReadability()` - Flesch Reading Ease scoring for content assessment (legacy compatibility name)
 - `GenerateNGrams()` - N-gram generation for linguistic analysis
 
 ### 🛠️ **String Utilities**
@@ -597,11 +597,9 @@ Both are equally valid - choose whichever you prefer!
 
 ## 📖 System Requirements
 
-### Tested Environments
+### CI targets
 
-| Module                          | Windows 11 | Ubuntu 24.04.2 |
-|---------------------------------|------------|----------------|
-| StringKit                 | ✅         | ✅             |
+The CI workflow targets Windows Server 2022 and Ubuntu 24.04 with FPC 3.2.2. Its live status is reported by the CI badge above.
 
 ### Dependencies
 
@@ -609,7 +607,7 @@ Both are equally valid - choose whichever you prefer!
   - No external dependencies required
 - Linux
   - No external dependencies required
-- Uses only standard Free Pascal RTL units
+- Uses Free Pascal RTL/FCL components only; no third-party dependencies
 
 ### Build Requirements
 
@@ -625,24 +623,28 @@ For detailed documentation, see:
 - 📝 [StringKit Helper Coverage](docs/stringkit-helper-coverage.md)
  
 
+### Text and Unicode limitations
+
+Several current operations are byte/ASCII oriented rather than Unicode-aware: `ReverseText`, `GetWords`, case-conversion tokenisation, URL encoding, Hex encoding, and whitespace classification. UTF-8 input may therefore be processed as bytes rather than user-perceived characters. Unicode-aware text handling is planned for a future release.
+
 ## ✅ Testing
 
-1. Open the `TestRunner.lpi` using Lazarus IDE
-2. Compile the project
-3. Run the Test Runner:
+The [CI workflow](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml) compiles and runs FPCUnit on Ubuntu and Windows with FPC 3.2.2, then compiles the example programs and representative modular-helper configurations. To run the suite locally with Lazarus:
 
 ```bash
-$ cd tests
-$ ./TestRunner.exe -a --format=plain
+lazbuild --build-mode=Release tests/TestRunner.lpi
+./tests/TestRunner.exe -a --format=plain
 ```
+
+The Lazarus package is also compiled locally before releases. It remains a separate check from CI to keep the workflow limited to the command-line FPC toolchain.
 
 ## 🧭 **Future Weaving Patterns**
 
 *Our roadmap for expanding the string artisan's toolkit*
 
-- Remove custom types and use RTL types
-- Introduce custom method for hashing
-- Enhance multi-byte character weaving for global text tapestries
+- Add Unicode-aware text operations while preserving explicit byte-oriented behavior where needed
+- Evaluate checksums/data hashes and cryptographic hashes separately; password storage must use established password-hashing algorithms and libraries, never a home-grown implementation
+- Introduce v2 canonical names (`Reverse`, `Capitalize`, and `JoinWith`) while retaining deprecated compatibility aliases where practical
 - Seamless support for Free Pascal and Lazarus package managers
 
 
