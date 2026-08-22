@@ -28,6 +28,9 @@ test_dir/
 *.~*
 *.tmp
 
+# Local compiler and documentation output
+/build/
+
 # OS-specific files
 .DS_Store
 .DS_Store?

@@ -2,6 +2,12 @@
 
 This roadmap describes direction rather than dates. Compatibility and beginner-friendly static APIs remain important release criteria.
 
+## Completed in v1.9.1
+
+- Added progressive beginner documentation, executable task recipes, and concise API/contract guides.
+- Added a lightweight versioned documentation site builder, offline archive output, and GitHub Pages publishing workflow.
+- Kept the existing public API intact while making static/helper choices and feature flags easier to discover.
+
 ## Completed in v1.9.0
 
 - Identifier-aware ASCII case conversion and typed fuzzy method selection.

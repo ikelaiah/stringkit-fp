@@ -70,3 +70,20 @@ jobs:
           fpc -MObjFPC -Scghi -dSK_ANY -dSK_CASE -dSK_ENCODE "-Fu$root\src" "-FU$root\build\case-encode" "-FE$root\build\case-encode" "$root\examples\directives\CaseAndEncodeDemo.pas"
           fpc -MObjFPC -Scghi -B -dSK_ANY -dSK_COMPARE "-Fu$root\src" "-FU$root\build\compare" "$root\src\StringKitHelper.pas"
           lazbuild --build-all "$root\packages\lazarus\stringkit_fp.lpk"
+
+      - name: Validate documentation on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          python3 tools/test_build_docs.py
+          python3 tools/test_build_all_docs.py
+          python3 tools/test_check_built_docs.py
+          python3 tools/test_check_docs.py
+          python3 tools/check_docs.py
+          python3 tools/test_docs_examples.py
+          python3 tools/build_all_docs.py --site-root build/docs-site
+          python3 tools/check_built_docs.py --site build/docs-site
+
+      - name: Compile documentation examples on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: python tools/test_docs_examples.py

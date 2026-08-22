@@ -42,7 +42,7 @@ Notes:
 See details:
 
 - README: Modular Helper section (`README.md` → “Modular Helper via Feature Flags (1.6.0+)”)
-- Changelog: [CHANGELOG 1.6.0](../CHANGELOG.md#release-160---2025-08-16)
+- Changelog: [CHANGELOG 1.6.0](../../CHANGELOG.md#release-160---2025-08-16)
 
 ### Using static methods (type-first)
 

@@ -18,7 +18,7 @@ unit StringKitHelper;
       S := TStringKit.Trim('  hello  ');
     end;
 
-  See docs/stringkit-helper-coverage.md for details.
+  See docs/reference/helper-coverage.md for details.
 *)
 
 {$mode objfpc}{$H+}{$J-}

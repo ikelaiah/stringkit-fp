@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-08-22
+
+### Documentation
+
+- Added a progressive beginner guide, task-oriented recipes, focused topic guides, API overview, and explicit contracts reference.
+- Added 13 executable Pascal recipe programs with checked expected output.
+- Added a dependency-free versioned HTML documentation builder, generated-site checker, and offline ZIP/SHA-256 output.
+- Added GitHub Pages publishing support and clearer static-versus-helper guidance, including selective helper feature flags.
+- Moved the cheat sheet and helper-coverage inventory into the structured documentation tree.
+
+### Compatibility
+
+- No intentional breaking API changes.
+
 ## [1.9.0] - 2026-08-22
 
 ### Added

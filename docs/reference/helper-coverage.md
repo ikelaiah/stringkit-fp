@@ -3,7 +3,7 @@
 Notes:
 - “Is Available in String Helper” considers exact or aliased helper names.
 - 3 TStringKit methods have different helper names: ReverseText → Reverse, CapitalizeText → Capitalize, Join → JoinWith.
-- Measured for v1.9.0 with `tools/count_tstringkit_public.ps1`: 80 public operations covered, 0 missing.
+- Measured for v1.9.1 with `tools/count_tstringkit_public.ps1`: 80 public operations covered, 0 missing.
 # Summary Table
 
 Below is the full coverage summary with your requested columns.
