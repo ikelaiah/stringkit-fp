@@ -106,6 +106,8 @@ type
     procedure Test72_HexDecode;
     procedure Test73_Base64Encode;
     procedure Test74_Base64Decode;
+    procedure Test75_IdentifierCaseConversion;
+    procedure Test76_TypedFuzzyMatch;
   end;
 
 implementation
@@ -1376,6 +1378,49 @@ begin
   // Invalid input should return empty string per implementation
   AssertEquals('Invalid characters should yield empty', '', TStringKit.Decode64('@@@'));
   AssertEquals('Bad padding should yield empty', '', TStringKit.Decode64('SGVsbG8==='));
+end;
+
+procedure TStringTests.Test75_IdentifierCaseConversion;
+begin
+  AssertEquals('Pascal identifiers should split at lowercase-to-uppercase transitions',
+    'hello_world', TStringKit.ToSnakeCase('HelloWorld'));
+  AssertEquals('Acronyms should remain a single identifier token',
+    'xml_http_request', TStringKit.ToSnakeCase('XMLHttpRequest'));
+  AssertEquals('Leading acronyms should split before the following normal word',
+    'http_request', TStringKit.ToSnakeCase('HTTPRequest'));
+  AssertEquals('Separators should normalize to a single underscore',
+    'hello_world', TStringKit.ToSnakeCase('__hello-world  '));
+  AssertEquals('camelCase should use identifier tokens',
+    'helloWorld', TStringKit.ToCamelCase('hello_world'));
+  AssertEquals('PascalCase should use identifier tokens',
+    'HelloWorld', TStringKit.ToPascalCase('hello-world'));
+  AssertEquals('kebab-case should use identifier tokens',
+    'hello-world', TStringKit.ToKebabCase('HelloWorld'));
+  AssertEquals('Digits should stay with the preceding identifier token',
+    'html5_parser', TStringKit.ToSnakeCase('HTML5Parser'));
+  AssertEquals('Uppercase words after digits should be separate tokens',
+    'version2_api', TStringKit.ToSnakeCase('Version2API'));
+  AssertEquals('snake_case should be idempotent',
+    TStringKit.ToSnakeCase('XMLHttpRequest'),
+    TStringKit.ToSnakeCase(TStringKit.ToSnakeCase('XMLHttpRequest')));
+  AssertEquals('kebab-case should be idempotent',
+    TStringKit.ToKebabCase('XMLHttpRequest'),
+    TStringKit.ToKebabCase(TStringKit.ToKebabCase('XMLHttpRequest')));
+end;
+
+procedure TStringTests.Test76_TypedFuzzyMatch;
+begin
+  AssertTrue('Typed Levenshtein selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.6, fmLevenshtein) =
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.6, 0));
+  AssertTrue('Typed Jaro-Winkler selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('prefix123', 'prefix456', 0.7, fmJaroWinkler) =
+    TStringKit.IsFuzzyMatch('prefix123', 'prefix456', 0.7, 1));
+  AssertTrue('Typed LCS selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, fmLCS) =
+    TStringKit.IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2));
+  AssertFalse('Unknown legacy selectors should have a documented non-match result',
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.0, 99));
 end;
 
 initialization

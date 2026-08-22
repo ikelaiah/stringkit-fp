@@ -109,6 +109,8 @@ type
     procedure Test66_URLDecode;
     procedure Test71_Base64Encode;
     procedure Test72_Base64Decode;
+    procedure Test75_IdentifierCaseConversion;
+    procedure Test76_TypedFuzzyMatch;
     // Number conversions
     procedure Test67_FromRoman;
     procedure Test68_ToRoman;
@@ -933,6 +935,22 @@ begin
   AssertEquals('NumberToWords should handle zero', 'zero', string('0').NumberToWords);
   AssertEquals('NumberToWords should handle single digits', 'five', string('5').NumberToWords);
   AssertEquals('NumberToWords should handle teens', 'fifteen', '15'.NumberToWords);
+end;
+
+procedure TStringHelperTests.Test75_IdentifierCaseConversion;
+begin
+  AssertEquals('Helper should delegate identifier-aware snake case',
+    'xml_http_request', 'XMLHttpRequest'.ToSnakeCase);
+  AssertEquals('Helper should delegate identifier-aware kebab case',
+    'hello-world', 'HelloWorld'.ToKebabCase);
+  AssertEquals('Helper should delegate identifier-aware camel case',
+    'html5Parser', 'HTML5Parser'.ToCamelCase);
+end;
+
+procedure TStringHelperTests.Test76_TypedFuzzyMatch;
+begin
+  AssertTrue('Helper should expose the typed fuzzy selector',
+    'hello'.IsFuzzyMatch('hallo', 0.6, fmLevenshtein));
 end;
 
 initialization

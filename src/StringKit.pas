@@ -26,7 +26,12 @@ type
   *)
   TMatchesResults = array of TStringMatch;
 
-  
+  (* Selects the similarity metric for the type-safe IsFuzzyMatch overload. *)
+  TFuzzyMethod = (
+    fmLevenshtein,
+    fmJaroWinkler,
+    fmLCS
+  );
 
   (* TStringKit
     ----------
@@ -38,6 +43,8 @@ type
     no need to create instances. *)
   TStringKit = class
   private
+    class function IsIdentifierCharacter(const C: Char): Boolean; static;
+    class function TokenizeIdentifier(const Text: string): TStringDynArray; static;
     (*
       @description Checks if a character is considered whitespace.
                    Whitespace characters are space (#32), tab (#9), line feed (#10),
@@ -1083,7 +1090,8 @@ type
         // Using LCS (Method=2, Threshold=0.6)
         Result := IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2); // LCS Similarity = 0.625. Returns: True
     *)
-    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; static;
+    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; overload; static;
+    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double; Method: TFuzzyMethod): Boolean; overload; static;
     
     (* -------------------- Case Conversion Variants -------------------- *)
     
@@ -2041,6 +2049,74 @@ begin
   Result := C in [' ', #9, #10, #13];
 end;
 
+class function TStringKit.IsIdentifierCharacter(const C: Char): Boolean;
+begin
+  Result := C in ['A'..'Z', 'a'..'z', '0'..'9'];
+end;
+
+class function TStringKit.TokenizeIdentifier(const Text: string): TStringDynArray;
+var
+  TokenList: TStringList;
+  I, UpperRunLength: Integer;
+  Token: string;
+  Current, Previous: Char;
+  StartsNewToken: Boolean;
+begin
+  Result := nil;
+  TokenList := TStringList.Create;
+  try
+    Token := '';
+    for I := 1 to Length(Text) do
+    begin
+      Current := Text[I];
+      if not IsIdentifierCharacter(Current) then
+      begin
+        if Token <> '' then
+        begin
+          TokenList.Add(Token);
+          Token := '';
+        end;
+        Continue;
+      end;
+
+      StartsNewToken := False;
+      if Token <> '' then
+      begin
+        Previous := Token[Length(Token)];
+        if (Previous in ['a'..'z']) and (Current in ['A'..'Z']) then
+          StartsNewToken := True
+        else if (Previous in ['0'..'9']) and (Current in ['A'..'Z']) then
+          StartsNewToken := True
+        else if (Previous in ['A'..'Z']) and (Current in ['A'..'Z']) and
+          (I < Length(Text)) and (Text[I + 1] in ['a'..'z']) then
+        begin
+          UpperRunLength := 0;
+          while (UpperRunLength < Length(Token)) and
+            (Token[Length(Token) - UpperRunLength] in ['A'..'Z']) do
+            Inc(UpperRunLength);
+          StartsNewToken := UpperRunLength >= 3;
+        end;
+      end;
+
+      if StartsNewToken then
+      begin
+        TokenList.Add(Token);
+        Token := '';
+      end;
+      Token := Token + Current;
+    end;
+
+    if Token <> '' then
+      TokenList.Add(Token);
+
+    SetLength(Result, TokenList.Count);
+    for I := 0 to TokenList.Count - 1 do
+      Result[I] := TokenList[I];
+  finally
+    TokenList.Free;
+  end;
+end;
+
 class function TStringKit.Trim(const Text: string): string;
 begin
   Result := SysUtils.Trim(Text);
@@ -2610,26 +2686,30 @@ begin
 end;
 
 class function TStringKit.IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean;
+begin
+  case Method of
+    0: Result := IsFuzzyMatch(S1, S2, Threshold, fmLevenshtein);
+    1: Result := IsFuzzyMatch(S1, S2, Threshold, fmJaroWinkler);
+    2: Result := IsFuzzyMatch(S1, S2, Threshold, fmLCS);
+  else
+    Result := False;
+  end;
+end;
+
+class function TStringKit.IsFuzzyMatch(const S1, S2: string; Threshold: Double; Method: TFuzzyMethod): Boolean;
 var
   Similarity: Double;
 begin
-  // Special case: identical strings are always a match
   if S1 = S2 then
     Exit(True);
-    
-  // Special case: if either string is empty (but not both), return false
-  if ((S1 = '') and (S2 <> '')) or ((S1 <> '') and (S2 = '')) then
+  if (S1 = '') or (S2 = '') then
     Exit(False);
-  
-  // Calculate similarity based on chosen method
+
   case Method of
-    0: Similarity := LevenshteinSimilarity(S1, S2);
-    1: Similarity := JaroWinklerSimilarity(S1, S2);
-    2: Similarity := LCSSimilarity(S1, S2);
-  else
-    Similarity := 0.0;
+    fmLevenshtein: Similarity := LevenshteinSimilarity(S1, S2);
+    fmJaroWinkler: Similarity := JaroWinklerSimilarity(S1, S2);
+    fmLCS: Similarity := LCSSimilarity(S1, S2);
   end;
-  
   Result := Similarity >= Threshold;
 end;
 
@@ -2662,7 +2742,7 @@ var
   I: Integer;
   Word: string;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   if Length(Words) = 0 then
@@ -2687,7 +2767,7 @@ var
   I: Integer;
   Word: string;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   // All words have first letter capitalized
@@ -2704,7 +2784,7 @@ var
   Words: TStringDynArray;
   I: Integer;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   for I := 0 to High(Words) do
@@ -2720,7 +2800,7 @@ var
   Words: TStringDynArray;
   I: Integer;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   for I := 0 to High(Words) do
