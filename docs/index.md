@@ -1,6 +1,6 @@
-# StringKit-FP documentation
+# StringKit-FP
 
-StringKit-FP is a lightweight string toolkit for Free Pascal and Lazarus. Start with a small task, then follow the guide that matches what you need to do.
+StringKit-FP is a modern, lightweight string toolkit for Free Pascal and Lazarus. Start with a small task, then follow the guide that matches what you need to do.
 
 ## Getting started
 
@@ -31,4 +31,4 @@ StringKit-FP is a lightweight string toolkit for Free Pascal and Lazarus. Start 
 - [Roadmap](../ROADMAP.md)
 - [Contributing](../CONTRIBUTING.md)
 
-The online site is versioned. The top-level site opens the current release; `/1.9.1/` keeps this release’s documentation at a stable path. Future entries in `versions.json` identify their immutable source ref, and the publishing builder regenerates every declared release path.
+The online site is versioned. The top-level site opens the current release; `/1.9.2/` is the current documentation path and `/1.9.1/` remains a stable historical release. The version selector opens a release root when a page is not shared by every version.

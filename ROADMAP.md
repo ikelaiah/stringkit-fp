@@ -2,6 +2,11 @@
 
 This roadmap describes direction rather than dates. Compatibility and beginner-friendly static APIs remain important release criteria.
 
+## Completed in v1.9.2
+
+- Redesigned the versioned documentation experience with a structured sidebar, responsive reading shell, light/dark themes, search, code-copy controls, and stronger built-site validation.
+- Preserved the beginner-first documentation path, offline archive support, and the v1.9.1 historical release site.
+
 ## Completed in v1.9.1
 
 - Added progressive beginner documentation, executable task recipes, and concise API/contract guides.

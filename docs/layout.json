@@ -1,6 +1,8 @@
 {
-  "schema_version": 1,
-  "release": "1.9.1",
+  "schema_version": 2,
+  "release": "1.9.2",
+  "site_title": "StringKit-FP documentation",
+  "description": "Practical StringKit-FP documentation for Free Pascal and Lazarus.",
   "required_pages": [
     "index.md",
     "start/index.md",
@@ -11,12 +13,56 @@
     "guides/case-conversion.md",
     "guides/validation.md",
     "guides/encoding.md",
-    "guides/fuzzy-matching.md",
     "guides/parsing-and-try-apis.md",
+    "guides/fuzzy-matching.md",
     "guides/text-analysis.md",
     "reference/api-overview.md",
-    "reference/helper-feature-flags.md",
     "reference/contracts-and-limitations.md",
+    "reference/helper-feature-flags.md",
     "reference/helper-coverage.md"
-  ]
+  ],
+  "navigation": [
+    { "title": "Getting Started", "pages": [
+      { "path": "index.md", "title": "Introduction" },
+      { "path": "start/index.md", "title": "Start Here" },
+      { "path": "start/beginner-guide.md", "title": "Beginner Guide" },
+      { "path": "start/recipes.md", "title": "Recipes" },
+      { "path": "start/cheat-sheet.md", "title": "Cheat Sheet" }
+    ] },
+    { "title": "Guides", "pages": [
+      { "path": "guides/static-vs-helper.md", "title": "Static vs Helper" },
+      { "path": "guides/case-conversion.md", "title": "Case Conversion" },
+      { "path": "guides/validation.md", "title": "Validation" },
+      { "path": "guides/encoding.md", "title": "Encoding" },
+      { "path": "guides/parsing-and-try-apis.md", "title": "Parsing & Try APIs" },
+      { "path": "guides/fuzzy-matching.md", "title": "Fuzzy Matching" },
+      { "path": "guides/text-analysis.md", "title": "Text Analysis" }
+    ] },
+    { "title": "Reference", "pages": [
+      { "path": "reference/api-overview.md", "title": "API Overview" },
+      { "path": "reference/contracts-and-limitations.md", "title": "Contracts & Limitations" },
+      { "path": "reference/helper-feature-flags.md", "title": "Helper Feature Flags" },
+      { "path": "reference/helper-coverage.md", "title": "Helper Coverage" }
+    ] }
+  ],
+  "project": [
+    { "title": "GitHub repository", "url": "https://github.com/ikelaiah/stringkit-fp" },
+    { "title": "Changelog", "project_path": "CHANGELOG.md" },
+    { "title": "Roadmap", "project_path": "ROADMAP.md" },
+    { "title": "Contributing", "project_path": "CONTRIBUTING.md" }
+  ],
+  "homepage": {
+    "tagline": "A modern string toolkit for Free Pascal and Lazarus.",
+    "actions": [
+      { "label": "Get Started", "path": "start/beginner-guide.md" },
+      { "label": "Browse Recipes", "path": "start/recipes.md" },
+      { "label": "API Reference", "path": "reference/api-overview.md" }
+    ],
+    "cards": [
+      { "eyebrow": "Get Started", "title": "Beginner Guide", "description": "Learn StringKit-FP from your first call to useful text processing.", "path": "start/beginner-guide.md" },
+      { "eyebrow": "Recipes", "title": "Common Tasks", "description": "Copy tested, working Pascal examples.", "path": "start/recipes.md" },
+      { "eyebrow": "Cheat Sheet", "title": "Quick Lookup", "description": "Find the operation you need quickly.", "path": "start/cheat-sheet.md" },
+      { "eyebrow": "API Reference", "title": "Public API", "description": "Browse StringKit's static and helper interfaces.", "path": "reference/api-overview.md" }
+    ]
+  }
 }

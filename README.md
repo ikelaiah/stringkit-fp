@@ -8,17 +8,17 @@
 [![Lazarus](https://img.shields.io/badge/Lazarus-4.0+-blue.svg)](https://www.lazarus-ide.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![CI](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/Version-1.9.1-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.1)
+[![Version](https://img.shields.io/badge/Version-1.9.2-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.2)
 
 Practical string handling for Free Pascal and Lazarus: cleaning, identifier case conversion, validation, encoding, regex extraction, approximate matching, and readability helpers. It has no third-party runtime dependencies.
 
 ## Learn StringKit-FP
 
-- [Beginner Guide](docs/start/beginner-guide.md) — installation and the first useful calls.
-- [Recipes](docs/start/recipes.md) — complete, compiled programs with expected output.
-- [Cheat Sheet](docs/start/cheat-sheet.md) — compact API reminder.
-- [API Overview](docs/reference/api-overview.md) — find the right area quickly.
-- [Online documentation](https://ikelaiah.github.io/stringkit-fp/1.9.1/) — browsable, versioned HTML documentation.
+- [Online Documentation](https://ikelaiah.github.io/stringkit-fp/) — browsable, versioned HTML documentation.
+- [Beginner Guide](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/beginner-guide.html) — installation and the first useful calls.
+- [Recipes](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/recipes.html) — complete, compiled programs with expected output.
+- [Cheat Sheet](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/cheat-sheet.html) — compact API reminder.
+- [API Reference](https://ikelaiah.github.io/stringkit-fp/1.9.2/reference/api-overview.html) — find the right area quickly.
 
 The repository [documentation index](docs/index.md) links to all beginner guides, topic guides, contracts, and helper references.
 

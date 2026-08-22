@@ -29,13 +29,42 @@ class BuildDocsTests(unittest.TestCase):
         )
         (source / "start" / "guide.md").write_text(
             "# A tiny guide\n\n"
+            "> [!NOTE]\n"
+            "> This guide keeps Pascal's familiar 1-based indexing.\n\n"
+            "## Repeat\n\n"
             "```pascal\n"
             "Writeln('Hello');\n"
-            "```\n",
+            "```\n\n"
+            "### Details\n\n"
+            "The call writes one line.\n\n"
+            "## Repeat\n\n"
+            "The stable duplicate heading uses a distinct anchor.\n",
             encoding="utf-8",
         )
         (source / "layout.json").write_text(
-            json.dumps({"schema_version": 1, "release": "1.9.1"}),
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "release": "1.9.1",
+                    "site_title": "StringKit-FP documentation",
+                    "description": "Practical StringKit-FP documentation.",
+                    "required_pages": ["index.md", "start/guide.md"],
+                    "navigation": [
+                        {
+                            "title": "Getting Started",
+                            "pages": [
+                                {"path": "index.md", "title": "Introduction"},
+                                {"path": "start/guide.md", "title": "Beginner Guide"},
+                            ],
+                        }
+                    ],
+                    "project": [{"title": "GitHub repository", "url": "https://github.com/example/stringkit-fp"}],
+                    "homepage": {
+                        "tagline": "A modern string toolkit for Free Pascal and Lazarus.",
+                        "actions": [{"label": "Get Started", "path": "start/guide.md"}],
+                    },
+                }
+            ),
             encoding="utf-8",
         )
         versions = source / "versions.json"
@@ -53,7 +82,7 @@ class BuildDocsTests(unittest.TestCase):
         )
         return source, output, site_root
 
-    def test_builds_versioned_navigation_and_pascal_code(self) -> None:
+    def test_builds_documentation_shell_navigation_and_pascal_code(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source, output, site_root = self.write_fixture(Path(directory))
 
@@ -63,7 +92,23 @@ class BuildDocsTests(unittest.TestCase):
             guide = (output / "start" / "guide.html").read_text(encoding="utf-8")
             landing = (site_root / "index.html").read_text(encoding="utf-8")
             self.assertIn('href="start/guide.html"', index)
+            self.assertIn('class="doc-sidebar"', guide)
+            self.assertIn('aria-label="Breadcrumb"', guide)
+            self.assertIn('class="page-navigation"', guide)
+            self.assertIn('class="on-page"', guide)
+            self.assertIn('class="copy-code"', guide)
+            self.assertIn('class="admonition admonition-note"', guide)
+            self.assertIn('class="heading-anchor"', guide)
+            self.assertIn('id="repeat-2"', guide)
+            self.assertIn('id="version-select"', guide)
             self.assertIn('<pre><code class="language-pascal">', guide)
+            self.assertTrue((output / "assets" / "site.css").is_file())
+            self.assertTrue((output / "assets" / "site.js").is_file())
+            self.assertTrue((output / "search-index.json").is_file())
+            self.assertTrue((output / "search-index.js").is_file())
+            self.assertIn(':root[data-theme="dark"]', (output / "assets" / "site.css").read_text(encoding="utf-8"))
+            self.assertIn("StringKitSearchIndex", (output / "assets" / "site.js").read_text(encoding="utf-8"))
+            self.assertEqual("Getting Started", json.loads((output / "search-index.json").read_text(encoding="utf-8"))[1]["section"])
             self.assertIn("StringKit-FP documentation", landing)
 
     def test_rejects_a_broken_internal_link(self) -> None:
@@ -75,6 +120,17 @@ class BuildDocsTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "broken internal link"):
+                build_site(source, output, site_root, source / "versions.json")
+
+    def test_rejects_an_unsafe_markdown_url(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, output, site_root = self.write_fixture(Path(directory))
+            (source / "index.md").write_text(
+                "# StringKit-FP documentation\n\n[Unsafe](javascript:alert(1))\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "unsafe link"):
                 build_site(source, output, site_root, source / "versions.json")
 
     def test_links_project_markdown_to_its_repository_source(self) -> None:

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2026-08-22
+
+### Documentation Experience
+
+- Redesigned the generated developer documentation with hierarchical navigation, breadcrumbs, on-page outlines, and sequential previous/next links.
+- Added a responsive documentation shell with light/dark themes, accessible mobile navigation, improved typography, and focused Pascal code panels with copy support.
+- Added a version selector, lightweight offline-safe client-side search, readable responsive tables, and GitHub-style NOTE, TIP, IMPORTANT, and WARNING callouts.
+- Moved presentation assets out of the Python builder and strengthened built-site checks for assets, duplicate IDs, unsafe links, local paths, and version targets.
+- Preserved generated offline ZIP/SHA-256 output and the v1.9.1 historical documentation path.
+
+### Compatibility
+
+- No intentional breaking API changes.
+
 ## [1.9.1] - 2026-08-22
 
 ### Documentation
