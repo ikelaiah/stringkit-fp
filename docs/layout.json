@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "release": "1.9.1",
+  "required_pages": [
+    "index.md",
+    "start/index.md",
+    "start/beginner-guide.md",
+    "start/recipes.md",
+    "start/cheat-sheet.md",
+    "guides/static-vs-helper.md",
+    "guides/case-conversion.md",
+    "guides/validation.md",
+    "guides/encoding.md",
+    "guides/fuzzy-matching.md",
+    "guides/parsing-and-try-apis.md",
+    "guides/text-analysis.md",
+    "reference/api-overview.md",
+    "reference/helper-feature-flags.md",
+    "reference/contracts-and-limitations.md",
+    "reference/helper-coverage.md"
+  ]
+}

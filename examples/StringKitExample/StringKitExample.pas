@@ -31,7 +31,7 @@ type
     procedure ShowPatternMatching;     // Illustrates regex pattern matching capabilities
     procedure ShowStringAnalysis;      // Demonstrates string analysis functions
     procedure ShowStringExtraction;    // Shows string extraction and substring operations
-    procedure ShowVersion19Contracts;  // Demonstrates explicit v1.9.0 APIs
+    procedure ShowCurrentApiContracts;  // Demonstrates current explicit API contracts
   end;
 
 // TTextProcessor
@@ -139,12 +139,12 @@ begin
   WriteLn;
 end;
 
-procedure TTextProcessor.ShowVersion19Contracts;
+procedure TTextProcessor.ShowCurrentApiContracts;
 var
   Decoded: string;
   RomanValue: Integer;
 begin
-  WriteLn('v1.9.0 API Contracts:');
+  WriteLn('v1.9.1 API Contracts:');
   WriteLn('---------------------');
   WriteLn('Identifier case: ', TStringKit.ToSnakeCase('HelloWorld'));
   WriteLn('Typed fuzzy match: ', TStringKit.IsFuzzyMatch('colour', 'color', 0.75, fmLevenshtein));
@@ -172,7 +172,7 @@ begin
   ShowPatternMatching;
   ShowStringAnalysis;
   ShowStringExtraction;
-  ShowVersion19Contracts;
+  ShowCurrentApiContracts;
 end;
 
 var
