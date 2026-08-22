@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/stringkit-fp-banner.svg" alt="StringKit-FP — the complete toolkit for working with text" width="100%" />
+</p>
+
 # 🧵 StringKit-FP: The Complete String Toolkit
 
 [![FPC](https://img.shields.io/badge/Free%20Pascal-3.2.2-blue.svg)](https://www.freepascal.org/)
@@ -7,12 +11,6 @@
 [![CI](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/Status-Ready%20to%20Weave-brightgreen.svg)]()
 [![Version](https://img.shields.io/badge/Version-1.9.0-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.0)
-
-
-<p align="center">
-  <img src="assets/logo-v1-320.png" alt="StringKit-FP Logo" width="320"/>
-</p>
-
 
 ## 📚 Table of Contents
 
