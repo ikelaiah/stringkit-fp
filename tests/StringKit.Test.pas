@@ -106,6 +106,14 @@ type
     procedure Test72_HexDecode;
     procedure Test73_Base64Encode;
     procedure Test74_Base64Decode;
+    procedure Test75_IdentifierCaseConversion;
+    procedure Test76_TypedFuzzyMatch;
+    procedure Test77_TryDecodingContracts;
+    procedure Test78_TryFromRoman;
+    procedure Test79_ExplicitURLEncoding;
+    procedure Test80_ReadabilityAPIs;
+    procedure Test81_ValidatorContracts;
+    procedure Test82_EmptyDelimiterSplit;
   end;
 
 implementation
@@ -1376,6 +1384,175 @@ begin
   // Invalid input should return empty string per implementation
   AssertEquals('Invalid characters should yield empty', '', TStringKit.Decode64('@@@'));
   AssertEquals('Bad padding should yield empty', '', TStringKit.Decode64('SGVsbG8==='));
+end;
+
+procedure TStringTests.Test75_IdentifierCaseConversion;
+begin
+  AssertEquals('Pascal identifiers should split at lowercase-to-uppercase transitions',
+    'hello_world', TStringKit.ToSnakeCase('HelloWorld'));
+  AssertEquals('Acronyms should remain a single identifier token',
+    'xml_http_request', TStringKit.ToSnakeCase('XMLHttpRequest'));
+  AssertEquals('Leading acronyms should split before the following normal word',
+    'http_request', TStringKit.ToSnakeCase('HTTPRequest'));
+  AssertEquals('Separators should normalize to a single underscore',
+    'hello_world', TStringKit.ToSnakeCase('__hello-world  '));
+  AssertEquals('camelCase should use identifier tokens',
+    'helloWorld', TStringKit.ToCamelCase('hello_world'));
+  AssertEquals('PascalCase should use identifier tokens',
+    'HelloWorld', TStringKit.ToPascalCase('hello-world'));
+  AssertEquals('kebab-case should use identifier tokens',
+    'hello-world', TStringKit.ToKebabCase('HelloWorld'));
+  AssertEquals('Digits should stay with the preceding identifier token',
+    'html5_parser', TStringKit.ToSnakeCase('HTML5Parser'));
+  AssertEquals('Uppercase words after digits should be separate tokens',
+    'version2_api', TStringKit.ToSnakeCase('Version2API'));
+  AssertEquals('Mixed-case IPv6 identifiers should keep the version token intact',
+    'ipv6_address', TStringKit.ToSnakeCase('IPv6Address'));
+  AssertEquals('Digit runs should remain attached to their preceding acronym',
+    'gl11_version', TStringKit.ToSnakeCase('GL11Version'));
+  AssertEquals('snake_case should be idempotent',
+    TStringKit.ToSnakeCase('XMLHttpRequest'),
+    TStringKit.ToSnakeCase(TStringKit.ToSnakeCase('XMLHttpRequest')));
+  AssertEquals('kebab-case should be idempotent',
+    TStringKit.ToKebabCase('XMLHttpRequest'),
+    TStringKit.ToKebabCase(TStringKit.ToKebabCase('XMLHttpRequest')));
+end;
+
+procedure TStringTests.Test76_TypedFuzzyMatch;
+begin
+  AssertTrue('Typed Levenshtein selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.6, fmLevenshtein) =
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.6, 0));
+  AssertTrue('Typed Jaro-Winkler selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('prefix123', 'prefix456', 0.7, fmJaroWinkler) =
+    TStringKit.IsFuzzyMatch('prefix123', 'prefix456', 0.7, 1));
+  AssertTrue('Typed LCS selection should match the legacy selector',
+    TStringKit.IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, fmLCS) =
+    TStringKit.IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2));
+  AssertFalse('Unknown legacy selectors should have a documented non-match result',
+    TStringKit.IsFuzzyMatch('hello', 'hallo', 0.0, 99));
+end;
+
+procedure TStringTests.Test77_TryDecodingContracts;
+var
+  Decoded, BinaryText: string;
+begin
+  AssertTrue('Strict hex decoding should accept an empty value',
+    TStringKit.TryHexDecode('', Decoded));
+  AssertEquals('Successful empty hex decoding should clear the output', '', Decoded);
+  AssertTrue('Strict hex decoding should accept uppercase and lowercase digits',
+    TStringKit.TryHexDecode('48656c6C6F', Decoded));
+  AssertEquals('Strict hex decoding should decode a complete input', 'Hello', Decoded);
+  AssertFalse('Strict hex decoding should reject odd lengths',
+    TStringKit.TryHexDecode('ABC', Decoded));
+  AssertEquals('Failed hex decoding should clear the output', '', Decoded);
+  AssertFalse('Strict hex decoding should reject invalid digits',
+    TStringKit.TryHexDecode('4142ZZ', Decoded));
+
+  BinaryText := #0#1#127#255;
+  AssertTrue('Strict hex decoding should round-trip byte strings',
+    TStringKit.TryHexDecode(TStringKit.HexEncode(BinaryText), Decoded));
+  AssertEquals('Strict hex decoding should preserve bytes', BinaryText, Decoded);
+
+  AssertTrue('Strict Base64 decoding should distinguish a valid empty value',
+    TStringKit.TryDecode64('', Decoded));
+  AssertEquals('Successful empty Base64 decoding should clear the output', '', Decoded);
+  AssertTrue('Strict Base64 decoding should round-trip byte strings',
+    TStringKit.TryDecode64(TStringKit.Encode64(BinaryText), Decoded));
+  AssertEquals('Strict Base64 decoding should preserve bytes', BinaryText, Decoded);
+  AssertFalse('Strict Base64 decoding should reject invalid characters',
+    TStringKit.TryDecode64('@@@', Decoded));
+  AssertEquals('Failed Base64 decoding should clear the output', '', Decoded);
+  AssertFalse('Strict Base64 decoding should reject bad padding',
+    TStringKit.TryDecode64('SGVsbG8===', Decoded));
+end;
+
+procedure TStringTests.Test78_TryFromRoman;
+var
+  Value, N: Integer;
+  Roman: string;
+begin
+  AssertTrue('Strict Roman parsing should accept canonical numerals',
+    TStringKit.TryFromRoman('MMXXVI', Value));
+  AssertEquals('Strict Roman parsing should return the parsed value', 2026, Value);
+  AssertTrue('Strict Roman parsing should preserve legacy case-insensitivity',
+    TStringKit.TryFromRoman('iv', Value));
+  AssertEquals('Lowercase canonical numerals should parse', 4, Value);
+  AssertFalse('Strict Roman parsing should reject repeated I',
+    TStringKit.TryFromRoman('IIII', Value));
+  AssertEquals('Failed Roman parsing should clear the output', 0, Value);
+  AssertFalse('Strict Roman parsing should reject invalid subtraction',
+    TStringKit.TryFromRoman('IC', Value));
+  AssertFalse('Strict Roman parsing should reject empty text',
+    TStringKit.TryFromRoman('', Value));
+
+  for N := 1 to 3999 do
+  begin
+    Roman := TStringKit.ToRoman(N);
+    AssertTrue('Canonical Roman numerals should parse strictly',
+      TStringKit.TryFromRoman(Roman, Value));
+    AssertEquals('Strict Roman parsing should round-trip canonical values', N, Value);
+  end;
+end;
+
+procedure TStringTests.Test79_ExplicitURLEncoding;
+var
+  Original, Decoded: string;
+begin
+  AssertEquals('Percent encoding should encode spaces as %20',
+    'hello%20world', TStringKit.PercentEncode('hello world'));
+  AssertEquals('Form encoding should encode spaces as plus',
+    'hello+world', TStringKit.FormURLEncode('hello world'));
+  AssertEquals('Legacy URL encoding should remain form-style',
+    TStringKit.FormURLEncode('hello world'), TStringKit.URLEncode('hello world'));
+  AssertEquals('Percent decoding should preserve literal plus characters',
+    'a+b', TStringKit.PercentDecode('a+b'));
+  AssertEquals('Form decoding should turn plus into spaces',
+    'a b', TStringKit.FormURLDecode('a+b'));
+  AssertEquals('Legacy URL decoding should remain form-style',
+    TStringKit.FormURLDecode('a+b'), TStringKit.URLDecode('a+b'));
+
+  Original := 'a b+c/?' + #0 + #255;
+  AssertEquals('Percent encoding should round-trip byte strings', Original,
+    TStringKit.PercentDecode(TStringKit.PercentEncode(Original)));
+  Decoded := TStringKit.FormURLDecode(TStringKit.FormURLEncode(Original));
+  AssertEquals('Form encoding should round-trip byte strings', Original, Decoded);
+end;
+
+procedure TStringTests.Test80_ReadabilityAPIs;
+const
+  Sample = 'The quick brown fox jumps over the lazy dog.';
+begin
+  AssertEquals('FleschReadingEase should expose the corrected public name',
+    TStringKit.FleschKincaidReadability(Sample), TStringKit.FleschReadingEase(Sample), 0.000001);
+  AssertEquals('Flesch Reading Ease should use the documented formula with heuristic syllables',
+    94.3, TStringKit.FleschReadingEase(Sample), 0.01);
+  AssertEquals('Flesch-Kincaid Grade Level should use the documented formula',
+    2.342222, TStringKit.FleschKincaidGradeLevel(Sample), 0.00001);
+  AssertEquals('Flesch Reading Ease should define an empty-input result',
+    0.0, TStringKit.FleschReadingEase(''), 0.000001);
+  AssertEquals('Flesch-Kincaid Grade Level should define an empty-input result',
+    0.0, TStringKit.FleschKincaidGradeLevel(''), 0.000001);
+end;
+
+procedure TStringTests.Test81_ValidatorContracts;
+begin
+  AssertTrue('URL validation should accept modern long TLDs',
+    TStringKit.IsValidURL('https://example.international'));
+  AssertTrue('URL validation should accept uppercase TLDs',
+    TStringKit.IsValidURL('https://example.MUSEUM'));
+  AssertFalse('URL validation should still reject a host without a TLD',
+    TStringKit.IsValidURL('https://example'));
+  AssertTrue('Date validation should retain component-order support',
+    TStringKit.IsValidDate('26/10/2023', 'dd-mm-yyyy'));
+end;
+
+procedure TStringTests.Test82_EmptyDelimiterSplit;
+var
+  Values: TStringDynArray;
+begin
+  Values := TStringKit.Split('unchanged', '');
+  AssertEquals('Empty delimiters should return an empty result instead of looping', 0, Length(Values));
 end;
 
 initialization

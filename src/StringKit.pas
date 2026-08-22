@@ -26,7 +26,12 @@ type
   *)
   TMatchesResults = array of TStringMatch;
 
-  
+  (* Selects the similarity metric for the type-safe IsFuzzyMatch overload. *)
+  TFuzzyMethod = (
+    fmLevenshtein,
+    fmJaroWinkler,
+    fmLCS
+  );
 
   (* TStringKit
     ----------
@@ -38,6 +43,12 @@ type
     no need to create instances. *)
   TStringKit = class
   private
+    class function IsIdentifierCharacter(const C: Char): Boolean; static;
+    class function TokenizeIdentifier(const Text: string): TStringDynArray; static;
+    class function EncodeURL(const Text: string; SpaceAsPlus: Boolean): string; static;
+    class function DecodeURL(const Text: string; PlusAsSpace: Boolean): string; static;
+    class procedure GetReadabilityCounts(const Text: string; out WordCount, SentenceCount,
+      SyllableCount: Integer); static;
     (*
       @description Checks if a character is considered whitespace.
                    Whitespace characters are space (#32), tab (#9), line feed (#10),
@@ -1060,7 +1071,7 @@ type
                     0: Levenshtein Similarity (default)
                     1: Jaro-Winkler Similarity
                     2: Longest Common Subsequence (LCS) Similarity
-                    Other values result in a similarity of 0.0.
+                    Other values return False. Prefer the TFuzzyMethod overload in new code.
       
       @returns True if the calculated similarity is greater than or equal to the Threshold,
                False otherwise. Also returns True if S1 and S2 are identical. Returns False
@@ -1083,7 +1094,9 @@ type
         // Using LCS (Method=2, Threshold=0.6)
         Result := IsFuzzyMatch('ABCDEFG', 'ABDZEFXG', 0.6, 2); // LCS Similarity = 0.625. Returns: True
     *)
-    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; static;
+    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean; overload; static;
+    (* @description Type-safe fuzzy matching. The enum values map exactly to legacy methods 0, 1, and 2. *)
+    class function IsFuzzyMatch(const S1, S2: string; Threshold: Double; Method: TFuzzyMethod): Boolean; overload; static;
     
     (* -------------------- Case Conversion Variants -------------------- *)
     
@@ -1115,7 +1128,8 @@ type
     (*
       @description Converts a string to camelCase format. The first word starts lowercase,
                    and subsequent words start with an uppercase letter, with all other letters
-                   in lowercase. Words are identified using GetWords (alphanumeric sequences).
+                   in lowercase. An internal ASCII identifier tokenizer recognizes separators,
+                   lower-to-upper transitions, and common acronym boundaries.
                    No separators are included in the output.
       
       @usage Use for converting phrases or identifiers into camelCase variable or function names,
@@ -1125,14 +1139,14 @@ type
       
       @returns The string in camelCase format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on UpperCase/LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToCamelCase('hello world');        // Returns: 'helloWorld'
         Result := ToCamelCase('Hello World');        // Returns: 'helloWorld'
         Result := ToCamelCase('__some_variable-name'); // Returns: 'someVariableName'
-        Result := ToCamelCase('SingleWord');         // Returns: 'singleword'
+        Result := ToCamelCase('SingleWord');         // Returns: 'singleWord'
         Result := ToCamelCase('word');               // Returns: 'word'
         Result := ToCamelCase('123 abc');            // Returns: '123Abc'
         Result := ToCamelCase('');                   // Returns: ''
@@ -1143,7 +1157,7 @@ type
     (*
       @description Converts a string to PascalCase (or UpperCamelCase) format. Each word starts
                    with an uppercase letter, with all other letters in lowercase. Words are
-                   identified using GetWords (alphanumeric sequences). No separators are
+                   identified with the internal ASCII identifier tokenizer. No separators are
                    included in the output.
       
       @usage Use for converting phrases or identifiers into PascalCase class names or type names,
@@ -1153,14 +1167,14 @@ type
       
       @returns The string in PascalCase format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on UpperCase/LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToPascalCase('hello world');        // Returns: 'HelloWorld'
         Result := ToPascalCase('Hello World');        // Returns: 'HelloWorld'
         Result := ToPascalCase('__some_variable-name'); // Returns: 'SomeVariableName'
-        Result := ToPascalCase('SingleWord');         // Returns: 'Singleword' (Note: Lowercases rest)
+        Result := ToPascalCase('SingleWord');         // Returns: 'SingleWord'
         Result := ToPascalCase('word');               // Returns: 'Word'
         Result := ToPascalCase('123 abc');            // Returns: '123Abc'
         Result := ToPascalCase('');                   // Returns: ''
@@ -1170,8 +1184,8 @@ type
     
     (*
       @description Converts a string to snake_case format. All words are converted to lowercase
-                   and joined by underscore characters ('_'). Words are identified using GetWords
-                   (alphanumeric sequences).
+                   and joined by underscore characters ('_'). Words are identified with the
+                   internal ASCII identifier tokenizer.
       
       @usage Use for converting phrases or identifiers into snake_case variable or function names,
              common in languages like Python, Ruby.
@@ -1180,14 +1194,14 @@ type
       
       @returns The string in snake_case format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToSnakeCase('hello world');        // Returns: 'hello_world'
         Result := ToSnakeCase('Hello World');        // Returns: 'hello_world'
         Result := ToSnakeCase('__some_variable-name'); // Returns: 'some_variable_name'
-        Result := ToSnakeCase('SingleWord');         // Returns: 'singleword'
+        Result := ToSnakeCase('SingleWord');         // Returns: 'single_word'
         Result := ToSnakeCase('word');               // Returns: 'word'
         Result := ToSnakeCase('123 abc');            // Returns: '123_abc'
         Result := ToSnakeCase('');                   // Returns: ''
@@ -1197,8 +1211,8 @@ type
     
     (*
       @description Converts a string to kebab-case format. All words are converted to lowercase
-                   and joined by hyphen characters ('-'). Words are identified using GetWords
-                   (alphanumeric sequences).
+                   and joined by hyphen characters ('-'). Words are identified with the
+                   internal ASCII identifier tokenizer.
       
       @usage Use for converting phrases or identifiers into kebab-case, common in URLs, CSS class names,
              and HTML attributes.
@@ -1207,14 +1221,14 @@ type
       
       @returns The string in kebab-case format. Returns an empty string if the input contains no words.
       
-      @warning Relies on GetWords to identify word boundaries (alphanumeric sequences only).
-               Punctuation is treated as a delimiter and removed. Relies on LowerCase.
+      @warning Identifier tokenization is byte/ASCII-oriented. Digits stay with their current
+               token, and an uppercase word after digits starts a new token.
       
       @example
         Result := ToKebabCase('hello world');        // Returns: 'hello-world'
         Result := ToKebabCase('Hello World');        // Returns: 'hello-world'
         Result := ToKebabCase('__some_variable_name'); // Returns: 'some-variable-name'
-        Result := ToKebabCase('SingleWord');         // Returns: 'singleword'
+        Result := ToKebabCase('SingleWord');         // Returns: 'single-word'
         Result := ToKebabCase('word');               // Returns: 'word'
         Result := ToKebabCase('123 abc');            // Returns: '123-abc'
         Result := ToKebabCase('');                   // Returns: ''
@@ -1262,10 +1276,9 @@ type
                Allows alphanumeric characters, special chars (@:%._+~#=) in domain,
                and query strings with alphanumeric chars and special chars (&/?=)
       
-      @warning These regex patterns cover many common URLs but might not match all valid URL formats
-                (e.g., internationalized domain names, newer TLDs, file URLs, data URLs).
-                They also don't check if the URL actually exists or is reachable. Case-sensitive matching for domain TLD part ([a-z]{2,6}).
-                Relies on MatchesPattern.
+      @warning This practical common-syntax check accepts mixed-case TLDs of 2 to 63 letters,
+                but is not a complete URL parser and does not check reachability, IDNs, file URLs,
+                or data URLs. Relies on MatchesPattern.
       
       @example
         Result := IsValidURL('http://example.com');        // Returns: True
@@ -1650,8 +1663,7 @@ type
     class function CountWords(const Text: string): Integer; static;
     
     (*
-      @description Calculates the Flesch Reading Ease score for a given text. The public name is
-                   retained for compatibility, but this is not the Flesch-Kincaid Grade Level formula. This score
+      @description Calculates the Flesch Reading Ease score for a given text. This score
                    estimates the readability of English text, with higher scores indicating easier
                    readability (typically on a 0-100 scale).
       
@@ -1672,17 +1684,21 @@ type
                 Assumes English text. Score is capped between 0 and 100.
       
       @example // Scores are approximate due to syllable counting method
-        Text1 := 'The quick brown fox jumps over the lazy dog.'; // 9 words, 1 sentence, ~10 syllables
-        // Score ~ 206.835 - 1.015*(9/1) - 84.6*(10/9) = 206.835 - 9.135 - 94 = ~103.7 (capped at 100)
-        Result := FleschKincaidReadability(Text1); // Should be high (easy) -> ~100.0
+        Text1 := 'The quick brown fox jumps over the lazy dog.'; // 9 words, 1 sentence, ~11 syllables
+        // Score ~ 206.835 - 1.015*(9/1) - 84.6*(11/9) = ~94.3
+        Result := FleschReadingEase(Text1); // High (easy) score -> ~94.3
         
         Text2 := 'This sentence, taken as a standalone example, is moderately complex.'; // 11 words, 1 sentence, ~21 syllables
         // Score ~ 206.835 - 1.015*(11/1) - 84.6*(21/11) = 206.835 - 11.165 - 161.5 = ~34.17
-        Result := FleschKincaidReadability(Text2); // Should be lower (harder) -> ~34.2
+        Result := FleschReadingEase(Text2); // Should be lower (harder) -> ~34.2
         
-        Result := FleschKincaidReadability(''); // Returns: 0.0
+        Result := FleschReadingEase(''); // Returns: 0.0
     *)
+    class function FleschReadingEase(const Text: string): Double; static;
+    (* @description Legacy compatibility alias for FleschReadingEase; this is not a grade-level formula. *)
     class function FleschKincaidReadability(const Text: string): Double; static;
+    (* @description Calculates Flesch-Kincaid Grade Level using heuristic English syllable counts. *)
+    class function FleschKincaidGradeLevel(const Text: string): Double; static;
     
     (*
       @description Generates n-grams (sequences of N consecutive words) from a text.
@@ -1774,8 +1790,7 @@ type
     class function HTMLDecode(const Text: string): string; static;
     
     (*
-      @description Encodes a string for safe inclusion in a URL component (like a query parameter value)
-                   by percent-encoding unsafe characters. Spaces are encoded as '+'.
+      @description Legacy form-style alias for FormURLEncode. Spaces are encoded as '+'.
       
       @usage Use when constructing URLs dynamically to ensure special characters in parameters
              or path segments don't break the URL structure or cause misinterpretation.
@@ -1788,9 +1803,8 @@ type
                   Safe characters (A-Z, a-z, 0-9, '-', '_', '.', '~') are not encoded.
                   Other bytes are encoded as %XX.
       
-      @warning This specific encoding (space to '+') is typically for query string parameters.
-                For encoding path segments, RFC 3986 suggests encoding space as %20.
-                Assumes single-byte characters; behavior with multi-byte UTF-8 might depend on Ord() interpretation.
+      @warning For URI percent encoding, use PercentEncode, which uses %20 for spaces.
+                All URL encoding APIs operate on bytes rather than Unicode characters.
       
       @example
         Result := URLEncode('Hello World!');     // Returns: 'Hello+World%21'
@@ -1801,9 +1815,8 @@ type
     class function URLEncode(const Text: string): string; static;
     
     (*
-      @description Decodes a URL-encoded string (specifically, application/x-www-form-urlencoded format)
-                   back into its original form. Converts '+' back to space and %XX hex sequences
-                   to their corresponding characters.
+      @description Legacy form-style alias for FormURLDecode. Converts '+' back to spaces and
+                   decodes valid %XX byte sequences.
       
       @usage Use to interpret data received from URL parameters or form submissions.
       
@@ -1811,10 +1824,8 @@ type
       
       @returns The decoded string.
       
-      @warning Assumes the input follows common URL encoding rules (space as '+', others as %XX).
-                Handles potential errors during hex conversion (%XX) by skipping the invalid sequence
-                and including the '%' literally. Assumes %XX represents single bytes; multi-byte
-                character reconstruction depends on the context where the decoded string is used.
+      @warning For percent-decoding that preserves literal '+', use PercentDecode. Invalid percent
+                sequences are preserved. All URL decoding APIs operate on bytes rather than Unicode characters.
       
       @example
         Result := URLDecode('Hello+World%21');     // Returns: 'Hello World!'
@@ -1824,6 +1835,14 @@ type
         Result := URLDecode('');                // Returns: ''
     *)
     class function URLDecode(const Text: string): string; static;
+    (* @description Percent-encodes bytes for URI components; spaces become %20. *)
+    class function PercentEncode(const Text: string): string; static;
+    (* @description Percent-decodes bytes and preserves literal + characters. *)
+    class function PercentDecode(const Text: string): string; static;
+    (* @description Encodes application/x-www-form-urlencoded data; spaces become +. *)
+    class function FormURLEncode(const Text: string): string; static;
+    (* @description Decodes application/x-www-form-urlencoded data; + becomes a space. *)
+    class function FormURLDecode(const Text: string): string; static;
     
     (*
       @description Encodes binary/text data into Base64 representation using the standard
@@ -1862,6 +1881,8 @@ type
         Result := Decode64('');         // Returns: ''
     *)
     class function Decode64(const Base64Text: string): string; static;
+    (* @description Strict non-throwing Base64 decoder. False clears Decoded for malformed input. *)
+    class function TryDecode64(const Base64Text: string; out Decoded: string): Boolean; static;
     
     (* -------------------- Number Conversions -------------------- *)
     
@@ -1919,6 +1940,8 @@ type
         Result := FromRoman('');        // Returns: 0
     *)
     class function FromRoman(const RomanNumeral: string): Integer; static;
+    (* @description Strict canonical Roman parser for 1..3999. False clears Value. *)
+    class function TryFromRoman(const RomanNumeral: string; out Value: Integer): Boolean; static;
     
     (*
       @description Converts an integer into its ordinal string representation (e.g., 1 -> '1st', 2 -> '2nd').
@@ -2030,6 +2053,8 @@ type
         Result := HexDecode('');         // Returns: ''
     *)
     class function HexDecode(const HexText: string): string; static;
+    (* @description Strict non-throwing hexadecimal decoder. False clears Decoded for malformed input. *)
+    class function TryHexDecode(const HexText: string; out Decoded: string): Boolean; static;
   end;
 
 implementation
@@ -2039,6 +2064,144 @@ implementation
 class function TStringKit.IsWhiteSpace(const C: Char): Boolean;
 begin
   Result := C in [' ', #9, #10, #13];
+end;
+
+class function TStringKit.IsIdentifierCharacter(const C: Char): Boolean;
+begin
+  Result := C in ['A'..'Z', 'a'..'z', '0'..'9'];
+end;
+
+class function TStringKit.TokenizeIdentifier(const Text: string): TStringDynArray;
+var
+  TokenList: TStringList;
+  I, UpperRunLength: Integer;
+  Token: string;
+  Current, Previous: Char;
+  StartsNewToken: Boolean;
+begin
+  Result := nil;
+  TokenList := TStringList.Create;
+  try
+    Token := '';
+    for I := 1 to Length(Text) do
+    begin
+      Current := Text[I];
+      if not IsIdentifierCharacter(Current) then
+      begin
+        if Token <> '' then
+        begin
+          TokenList.Add(Token);
+          Token := '';
+        end;
+        Continue;
+      end;
+
+      StartsNewToken := False;
+      if Token <> '' then
+      begin
+        Previous := Token[Length(Token)];
+        if (Previous in ['a'..'z']) and (Current in ['A'..'Z']) then
+          StartsNewToken := True
+        else if (Previous in ['0'..'9']) and (Current in ['A'..'Z']) then
+          StartsNewToken := True
+        else if (Previous in ['A'..'Z']) and (Current in ['A'..'Z']) and
+          (I < Length(Text)) and (Text[I + 1] in ['a'..'z']) then
+        begin
+          UpperRunLength := 0;
+          while (UpperRunLength < Length(Token)) and
+            (Token[Length(Token) - UpperRunLength] in ['A'..'Z']) do
+            Inc(UpperRunLength);
+          StartsNewToken := UpperRunLength >= 3;
+        end;
+      end;
+
+      if StartsNewToken then
+      begin
+        TokenList.Add(Token);
+        Token := '';
+      end;
+      Token := Token + Current;
+    end;
+
+    if Token <> '' then
+      TokenList.Add(Token);
+
+    SetLength(Result, TokenList.Count);
+    for I := 0 to TokenList.Count - 1 do
+      Result[I] := TokenList[I];
+  finally
+    TokenList.Free;
+  end;
+end;
+
+class function TStringKit.EncodeURL(const Text: string; SpaceAsPlus: Boolean): string;
+const
+  SafeChars = ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~'];
+var
+  I: Integer;
+begin
+  Result := '';
+  for I := 1 to Length(Text) do
+  begin
+    if Text[I] in SafeChars then
+      Result := Result + Text[I]
+    else if SpaceAsPlus and (Text[I] = ' ') then
+      Result := Result + '+'
+    else
+      Result := Result + '%' + IntToHex(Ord(Text[I]), 2);
+  end;
+end;
+
+class function TStringKit.DecodeURL(const Text: string; PlusAsSpace: Boolean): string;
+var
+  I, CharCode: Integer;
+  HexCode: string;
+begin
+  Result := '';
+  I := 1;
+  while I <= Length(Text) do
+  begin
+    if (Text[I] = '%') and (I + 2 <= Length(Text)) then
+    begin
+      HexCode := Copy(Text, I + 1, 2);
+      if MatchesPattern(HexCode, '^[0-9A-Fa-f]{2}$') then
+      begin
+        CharCode := StrToInt('$' + HexCode);
+        Result := Result + Chr(CharCode);
+        Inc(I, 3);
+        Continue;
+      end;
+    end;
+
+    if PlusAsSpace and (Text[I] = '+') then
+      Result := Result + ' '
+    else
+      Result := Result + Text[I];
+    Inc(I);
+  end;
+end;
+
+class procedure TStringKit.GetReadabilityCounts(const Text: string; out WordCount,
+  SentenceCount, SyllableCount: Integer);
+var
+  Words: TStringDynArray;
+  I: Integer;
+begin
+  Words := GetWords(Text);
+  WordCount := Length(Words);
+  SentenceCount := 0;
+  SyllableCount := 0;
+  if WordCount = 0 then
+    Exit;
+
+  for I := 1 to Length(Text) do
+    if Text[I] in ['.', '!', '?'] then
+      Inc(SentenceCount);
+  if SentenceCount = 0 then
+    SentenceCount := 1;
+
+  for I := 0 to High(Words) do
+    SyllableCount := SyllableCount + CountVowelGroups(LowerCase(Words[I]));
 end;
 
 class function TStringKit.Trim(const Text: string): string;
@@ -2262,6 +2425,7 @@ var
   Ch: Char;
   InWord: Boolean;
 begin
+  Result := nil;
   WordList := TStringList.Create;
   try
     Word := '';
@@ -2393,6 +2557,7 @@ begin
 
   M := Length(S1);
   N := Length(S2);
+  D := nil;
   SetLength(D, M + 1, N + 1);
 
   for I := 0 to M do
@@ -2459,6 +2624,8 @@ begin
     MatchWindow := 0;
 
   // Initialize matching arrays
+  Matches1 := nil;
+  Matches2 := nil;
   SetLength(Matches1, Length(S1));
   SetLength(Matches2, Length(S2));
   for I := 0 to Length(S1) - 1 do
@@ -2557,7 +2724,8 @@ begin
   // Handle empty strings
   if (S1 = '') or (S2 = '') then
     Exit('');
-    
+
+  LCS := nil;
   SetLength(LCS, Length(S1) + 1, Length(S2) + 1);
 
   for I := 0 to Length(S1) do
@@ -2610,26 +2778,30 @@ begin
 end;
 
 class function TStringKit.IsFuzzyMatch(const S1, S2: string; Threshold: Double = 0.7; Method: Integer = 0): Boolean;
+begin
+  case Method of
+    0: Result := IsFuzzyMatch(S1, S2, Threshold, fmLevenshtein);
+    1: Result := IsFuzzyMatch(S1, S2, Threshold, fmJaroWinkler);
+    2: Result := IsFuzzyMatch(S1, S2, Threshold, fmLCS);
+  else
+    Result := False;
+  end;
+end;
+
+class function TStringKit.IsFuzzyMatch(const S1, S2: string; Threshold: Double; Method: TFuzzyMethod): Boolean;
 var
   Similarity: Double;
 begin
-  // Special case: identical strings are always a match
   if S1 = S2 then
     Exit(True);
-    
-  // Special case: if either string is empty (but not both), return false
-  if ((S1 = '') and (S2 <> '')) or ((S1 <> '') and (S2 = '')) then
+  if (S1 = '') or (S2 = '') then
     Exit(False);
-  
-  // Calculate similarity based on chosen method
+
   case Method of
-    0: Similarity := LevenshteinSimilarity(S1, S2);
-    1: Similarity := JaroWinklerSimilarity(S1, S2);
-    2: Similarity := LCSSimilarity(S1, S2);
-  else
-    Similarity := 0.0;
+    fmLevenshtein: Similarity := LevenshteinSimilarity(S1, S2);
+    fmJaroWinkler: Similarity := JaroWinklerSimilarity(S1, S2);
+    fmLCS: Similarity := LCSSimilarity(S1, S2);
   end;
-  
   Result := Similarity >= Threshold;
 end;
 
@@ -2662,7 +2834,7 @@ var
   I: Integer;
   Word: string;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   if Length(Words) = 0 then
@@ -2687,7 +2859,7 @@ var
   I: Integer;
   Word: string;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   // All words have first letter capitalized
@@ -2704,7 +2876,7 @@ var
   Words: TStringDynArray;
   I: Integer;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   for I := 0 to High(Words) do
@@ -2720,7 +2892,7 @@ var
   Words: TStringDynArray;
   I: Integer;
 begin
-  Words := GetWords(Text);
+  Words := TokenizeIdentifier(Text);
   Result := '';
   
   for I := 0 to High(Words) do
@@ -2740,10 +2912,9 @@ end;
 
 class function TStringKit.IsValidURL(const Text: string): Boolean;
 begin
-  // Match pattern for URLs
-  // This covers http, https, ftp protocols with domain names
-  Result := MatchesPattern(Text, '^(https?|ftp)://[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$') or
-           MatchesPattern(Text, '^(www)\.[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$');
+  // Practical common-syntax validation, including mixed-case TLDs up to 63 characters.
+  Result := MatchesPattern(Text, '^(https?|ftp)://[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-zA-Z]{2,63}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$') or
+           MatchesPattern(Text, '^(www)\.[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-zA-Z]{2,63}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$');
 end;
 
 class function TStringKit.IsValidIP(const Text: string): Boolean;
@@ -2771,7 +2942,6 @@ var
   FormatLC: string;
   TextCopy: string;
   I, DayPos, MonthPos, YearPos: Integer;
-  Ch: Char;
 begin
   // If empty text, not valid
   if Text = '' then
@@ -2918,34 +3088,40 @@ begin
 end;
 
 class function TStringKit.Decode64(const Base64Text: string): string;
+begin
+  if not TryDecode64(Base64Text, Result) then
+    Result := '';
+end;
+
+class function TStringKit.TryDecode64(const Base64Text: string; out Decoded: string): Boolean;
 var
-  S: string;
+  CleanText: string;
   I: Integer;
 begin
-  if Base64Text = '' then
-    Exit('');
-
-  // Remove MIME-style whitespace so strict decoder can be used
-  S := '';
+  Decoded := '';
+  CleanText := '';
   for I := 1 to Length(Base64Text) do
     if not (Base64Text[I] in [#9, #10, #13, ' ']) then
-      S := S + Base64Text[I];
+      CleanText := CleanText + Base64Text[I];
 
-  if S = '' then
-    Exit('');
+  if CleanText = '' then
+    Exit(True);
+  if Length(CleanText) mod 4 <> 0 then
+    Exit(False);
 
-  // Strict decoding enforces correct alphabet and padding
   try
-    Result := DecodeStringBase64(S, True);
+    Decoded := DecodeStringBase64(CleanText, True);
+    Result := True;
   except
-    Result := '';
+    Decoded := '';
+    Result := False;
   end;
 end;
 
 class function TStringKit.FormatFloat(const Value: Double; Decimals: Integer = 2; DecimalSeparator: Char = '.'; ThousandSeparator: Char = ','): string;
 var
-  I, IntegerPartLen: Integer;
-  IntegerPart, DecimalPart, FormattedIntegerPart: string;
+  I: Integer;
+  DecimalPart, FormattedIntegerPart: string;
   IntValue: Int64;
   DecValue: Int64;
   Factor: Int64;
@@ -3012,6 +3188,10 @@ var
   Remaining, Current: string;
   DelimPos: Integer;
 begin
+  Result := nil;
+  if Delimiter = '' then
+    Exit;
+
   SplitList := TStringList.Create;
   try
     Remaining := Text;
@@ -3361,63 +3541,44 @@ begin
   Result := Length(Words);
 end;
 
-class function TStringKit.FleschKincaidReadability(const Text: string): Double;
+class function TStringKit.FleschReadingEase(const Text: string): Double;
 var
-  Words: TStringDynArray;
-  Sentences, Syllables, I, WordCount: Integer;
-  Word: string;
+  WordCount, SentenceCount, SyllableCount: Integer;
 begin
-  // Count words
-  Words := GetWords(Text);
-  WordCount := Length(Words);
-  
+  GetReadabilityCounts(Text, WordCount, SentenceCount, SyllableCount);
   if WordCount = 0 then
-  begin
-    Result := 0;
-    Exit;
-  end;
-  
-  // Count sentences (roughly by counting sentence-ending punctuation)
-  Sentences := 0;
-  for I := 1 to Length(Text) do
-    if Text[I] in ['.', '!', '?'] then
-      Inc(Sentences);
-      
-  // Ensure at least one sentence
-  if Sentences = 0 then
-    Sentences := 1;
-  
-  // Count syllables (very approximate method)
-  Syllables := 0;
-  for I := 0 to High(Words) do
-  begin
-    Word := LowerCase(Words[I]);
-    
-    // Count vowel groups as syllables
-    // This is a very basic approximation
-    Syllables := Syllables + CountVowelGroups(Word);
-    
-    // Words with no detected syllables get at least one
-    if CountVowelGroups(Word) = 0 then
-      Inc(Syllables);
-  end;
-  
-  // Calculate Flesch Reading Ease score (keeps the legacy public method name)
-  // Formula: 206.835 - 1.015 * (words/sentences) - 84.6 * (syllables/words)
-  Result := 206.835 - 1.015 * (WordCount / Sentences) - 84.6 * (Syllables / WordCount);
-  
-  // Constrain the result between 0 and 100
+    Exit(0.0);
+
+  Result := 206.835 - 1.015 * (WordCount / SentenceCount) -
+    84.6 * (SyllableCount / WordCount);
   if Result < 0 then
     Result := 0
   else if Result > 100 then
     Result := 100;
 end;
 
+class function TStringKit.FleschKincaidReadability(const Text: string): Double;
+begin
+  Result := FleschReadingEase(Text);
+end;
+
+class function TStringKit.FleschKincaidGradeLevel(const Text: string): Double;
+var
+  WordCount, SentenceCount, SyllableCount: Integer;
+begin
+  GetReadabilityCounts(Text, WordCount, SentenceCount, SyllableCount);
+  if WordCount = 0 then
+    Exit(0.0);
+
+  Result := 0.39 * (WordCount / SentenceCount) +
+    11.8 * (SyllableCount / WordCount) - 15.59;
+end;
+
 class function TStringKit.GenerateNGrams(const Text: string; N: Integer): TStringDynArray;
 var
   Words: TStringDynArray;
   NGramList: TStringList;
-  I, J, NGramCount: Integer;
+  I, J: Integer;
   NGram: string;
 begin
   Result := nil;
@@ -3522,68 +3683,34 @@ begin
   Result := ReplaceText(Result, '&nbsp;', ' ');
 end;
 
-class function TStringKit.URLEncode(const Text: string): string;
-const
-  // Characters that don't need encoding
-  SAFE_CHARS = ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~'];
-var
-  I: Integer;
-  HexStr: string;
+class function TStringKit.PercentEncode(const Text: string): string;
 begin
-  Result := '';
-  for I := 1 to Length(Text) do
-  begin
-    if Text[I] in SAFE_CHARS then
-      Result := Result + Text[I]
-    else if Text[I] = ' ' then
-      Result := Result + '+'
-    else
-    begin
-      // Convert character to hexadecimal representation
-      HexStr := IntToHex(Ord(Text[I]), 2);
-      Result := Result + '%' + HexStr;
-    end;
-  end;
+  Result := EncodeURL(Text, False);
+end;
+
+class function TStringKit.PercentDecode(const Text: string): string;
+begin
+  Result := DecodeURL(Text, False);
+end;
+
+class function TStringKit.FormURLEncode(const Text: string): string;
+begin
+  Result := EncodeURL(Text, True);
+end;
+
+class function TStringKit.FormURLDecode(const Text: string): string;
+begin
+  Result := DecodeURL(Text, True);
+end;
+
+class function TStringKit.URLEncode(const Text: string): string;
+begin
+  Result := FormURLEncode(Text);
 end;
 
 class function TStringKit.URLDecode(const Text: string): string;
-var
-  I: Integer;
-  HexCode: string;
-  CharCode: Integer;
 begin
-  Result := '';
-  I := 1;
-  
-  while I <= Length(Text) do
-  begin
-    if Text[I] = '%' then
-    begin
-      // Check if there are at least 2 more characters for a hex code
-      if I + 2 <= Length(Text) then
-      begin
-        HexCode := Copy(Text, I + 1, 2);
-        try
-          // Convert hex to integer and then to character
-          CharCode := StrToInt('$' + HexCode);
-          Result := Result + Chr(CharCode);
-        except
-          // If conversion fails, include the % character as-is
-          Result := Result + '%';
-          Dec(I, 2); // Adjust to process the next two characters normally
-        end;
-        Inc(I, 2); // Skip the two hex characters
-      end
-      else
-        Result := Result + Text[I]; // Incomplete % sequence
-    end
-    else if Text[I] = '+' then
-      Result := Result + ' '
-    else
-      Result := Result + Text[I];
-      
-    Inc(I);
-  end;
+  Result := FormURLDecode(Text);
 end;
 
 class function TStringKit.ToRoman(Value: Integer): string;
@@ -3668,6 +3795,26 @@ begin
       
     PrevValue := CurrValue;
   end;
+end;
+
+class function TStringKit.TryFromRoman(const RomanNumeral: string; out Value: Integer): Boolean;
+var
+  CanonicalRoman: string;
+  ParsedValue: Integer;
+begin
+  Value := 0;
+  CanonicalRoman := UpperCase(RomanNumeral);
+  if CanonicalRoman = '' then
+    Exit(False);
+
+  ParsedValue := FromRoman(CanonicalRoman);
+  if (ParsedValue < 1) or (ParsedValue > 3999) then
+    Exit(False);
+  if ToRoman(ParsedValue) <> CanonicalRoman then
+    Exit(False);
+
+  Value := ParsedValue;
+  Result := True;
 end;
 
 class function TStringKit.ToOrdinal(Value: Integer): string;
@@ -3838,6 +3985,31 @@ begin
     
     Inc(I, 2);
   end;
+end;
+
+class function TStringKit.TryHexDecode(const HexText: string; out Decoded: string): Boolean;
+var
+  I, CharCode: Integer;
+  Temp: string;
+begin
+  Decoded := '';
+  if Length(HexText) mod 2 <> 0 then
+    Exit(False);
+
+  Temp := '';
+  I := 1;
+  while I <= Length(HexText) do
+  begin
+    if not ((HexText[I] in ['0'..'9', 'A'..'F', 'a'..'f']) and
+      (HexText[I + 1] in ['0'..'9', 'A'..'F', 'a'..'f'])) then
+      Exit(False);
+    CharCode := StrToInt('$' + Copy(HexText, I, 2));
+    Temp := Temp + Chr(CharCode);
+    Inc(I, 2);
+  end;
+
+  Decoded := Temp;
+  Result := True;
 end;
 
 end.

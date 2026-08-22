@@ -109,6 +109,13 @@ type
     procedure Test66_URLDecode;
     procedure Test71_Base64Encode;
     procedure Test72_Base64Decode;
+    procedure Test75_IdentifierCaseConversion;
+    procedure Test76_TypedFuzzyMatch;
+    procedure Test77_TryDecodingContracts;
+    procedure Test78_TryFromRoman;
+    procedure Test79_ExplicitURLEncoding;
+    procedure Test80_ReadabilityAPIs;
+    procedure Test81_ValidatorContracts;
     // Number conversions
     procedure Test67_FromRoman;
     procedure Test68_ToRoman;
@@ -933,6 +940,71 @@ begin
   AssertEquals('NumberToWords should handle zero', 'zero', string('0').NumberToWords);
   AssertEquals('NumberToWords should handle single digits', 'five', string('5').NumberToWords);
   AssertEquals('NumberToWords should handle teens', 'fifteen', '15'.NumberToWords);
+end;
+
+procedure TStringHelperTests.Test75_IdentifierCaseConversion;
+begin
+  AssertEquals('Helper should delegate identifier-aware snake case',
+    'xml_http_request', 'XMLHttpRequest'.ToSnakeCase);
+  AssertEquals('Helper should delegate identifier-aware kebab case',
+    'hello-world', 'HelloWorld'.ToKebabCase);
+  AssertEquals('Helper should delegate identifier-aware camel case',
+    'html5Parser', 'HTML5Parser'.ToCamelCase);
+end;
+
+procedure TStringHelperTests.Test76_TypedFuzzyMatch;
+begin
+  AssertTrue('Helper should expose the typed fuzzy selector',
+    'hello'.IsFuzzyMatch('hallo', 0.6, fmLevenshtein));
+end;
+
+procedure TStringHelperTests.Test77_TryDecodingContracts;
+var
+  Decoded: string;
+begin
+  AssertTrue('Helper should expose strict hex decoding',
+    '48656C6C6F'.TryHexDecode(Decoded));
+  AssertEquals('Helper strict hex decoding should delegate', 'Hello', Decoded);
+  AssertTrue('Helper should expose strict Base64 decoding',
+    'SGVsbG8='.TryDecode64(Decoded));
+  AssertEquals('Helper strict Base64 decoding should delegate', 'Hello', Decoded);
+end;
+
+procedure TStringHelperTests.Test78_TryFromRoman;
+var
+  Value: Integer;
+begin
+  AssertTrue('Helper should expose strict Roman parsing',
+    'MMXXVI'.TryFromRoman(Value));
+  AssertEquals('Helper strict Roman parsing should delegate', 2026, Value);
+end;
+
+procedure TStringHelperTests.Test79_ExplicitURLEncoding;
+begin
+  AssertEquals('Helper should expose percent encoding',
+    'hello%20world', 'hello world'.PercentEncode);
+  AssertEquals('Helper should expose form encoding',
+    'hello+world', 'hello world'.FormURLEncode);
+  AssertEquals('Helper percent decoding should preserve plus',
+    'a+b', 'a+b'.PercentDecode);
+  AssertEquals('Helper form decoding should convert plus',
+    'a b', 'a+b'.FormURLDecode);
+end;
+
+procedure TStringHelperTests.Test80_ReadabilityAPIs;
+const
+  Sample = 'The quick brown fox jumps over the lazy dog.';
+begin
+  AssertEquals('Helper should expose Flesch Reading Ease',
+    TStringKit.FleschReadingEase(Sample), Sample.FleschReadingEase, 0.000001);
+  AssertEquals('Helper should expose Flesch-Kincaid Grade Level',
+    TStringKit.FleschKincaidGradeLevel(Sample), Sample.FleschKincaidGradeLevel, 0.000001);
+end;
+
+procedure TStringHelperTests.Test81_ValidatorContracts;
+begin
+  AssertTrue('Helper URL validation should accept uppercase modern TLDs',
+    'https://example.MUSEUM'.IsValidURL);
 end;
 
 initialization

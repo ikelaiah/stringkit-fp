@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/Docs-Available-brightgreen.svg)](docs/)
 [![CI](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/Status-Ready%20to%20Weave-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/Version-1.8.1-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.8.1)
+[![Version](https://img.shields.io/badge/Version-1.9.0-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.0)
 
 
 <p align="center">
@@ -22,6 +22,7 @@
 - [Manual Installation (General)](#-manual-installation-general)
 - [Usage](#-usage)
   - [Quick Start](#-quick-start)
+  - [v1.9.0 API Contracts](#v190-api-contracts)
   - [Instance-Style API via Type Helpers](#-instance-style-api-via-type-helpers)
   - [Modular Helper via Feature Flags (1.6.0+)](#modular-helper)
 - [Start Weaving: Quick Thread Patterns](#-start-weaving-quick-thread-patterns)
@@ -38,7 +39,7 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 
 **🎯 Key Advantages:**
 
-- 🧶 **Comprehensive**: 70 public `TStringKit` operations with corresponding helper coverage, spanning validation, transformation, analysis, and encoding
+- 🧶 **Comprehensive**: 80 public `TStringKit` operations with measured helper coverage, spanning validation, transformation, analysis, and encoding
 - 🪡 **Zero Dependencies**: Uses Free Pascal RTL/FCL components only; no third-party dependencies
 - 📏 **Advanced Analysis**: Readability scoring, n-gram generation, and statistical text analysis
 - 🔍 **Robust Validation**: Regex patterns, format checking, and custom validation rules
@@ -53,7 +54,7 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 *Professional text styling and formatting*
 
 - `ToUpper()`, `ToLower()`, `ToTitleCase()` - Standard case transformations
-- `ToCamelCase()`, `ToPascalCase()`, `ToSnakeCase()`, `ToKebabCase()` - Modern naming conventions
+- `ToCamelCase()`, `ToPascalCase()`, `ToSnakeCase()`, `ToKebabCase()` - Identifier-aware naming conversions
 - `PadLeft()`, `PadRight()`, `PadCenter()` - Text alignment with custom padding
 - `Truncate()` - Smart text truncation with ellipsis support
 - `CapitalizeText()` - Intelligent word capitalization
@@ -75,7 +76,7 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 - `HammingDistance()` - Character-by-character comparison for equal-length strings
 - `JaroSimilarity()`, `JaroWinklerSimilarity()` - Sophisticated similarity metrics
 - `LongestCommonSubsequence()`, `LCSSimilarity()` - Common subsequence analysis
-- `IsFuzzyMatch()` - Multi-algorithm fuzzy string matching
+- `IsFuzzyMatch()` and `TFuzzyMethod` - Multi-algorithm fuzzy string matching with a type-safe selector
 
 ### 🎵 **Phonetic Matching**
 
@@ -99,7 +100,8 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 *Web-safe string encoding and decoding*
 
 - `HTMLEncode()`, `HTMLDecode()` - HTML entity encoding for safe web output
-- `URLEncode()`, `URLDecode()` - URL parameter encoding/decoding
+- `PercentEncode()`, `FormURLEncode()`, `URLEncode()` - Explicit URI/form and legacy URL encoding
+- `TryHexDecode()`, `TryDecode64()` - Strict, non-throwing byte decoders
 - `HexEncode()`, `HexDecode()` - Hexadecimal string conversion
 
 ### 📊 **Text Analysis**
@@ -107,7 +109,7 @@ Professional string toolkit featuring advanced algorithms: Levenshtein/Jaro simi
 *Statistical analysis and text insights*
 
 - `CountWords()`, `GetWords()` - Word counting and extraction
-- `FleschKincaidReadability()` - Flesch Reading Ease scoring for content assessment (legacy compatibility name)
+- `FleschReadingEase()`, `FleschKincaidGradeLevel()` - English readability metrics
 - `GenerateNGrams()` - N-gram generation for linguistic analysis
 
 ### 🛠️ **String Utilities**
@@ -189,6 +191,36 @@ begin
   WriteLn('foo'.Encode64); // Zm9v
 end.
 ```
+
+### v1.9.0 API Contracts
+
+Identifier case conversion is ASCII/byte-oriented and recognizes separators, lower-to-upper transitions, and common acronym boundaries: `XMLHttpRequest` becomes `xml_http_request`. Digits remain with the current token; an uppercase word after digits begins a new token (`HTML5Parser` → `html5_parser`, `IPv6Address` → `ipv6_address`).
+
+```pascal
+var
+  Decoded: string;
+  Value: Integer;
+begin
+  WriteLn(TStringKit.ToSnakeCase('HelloWorld')); // hello_world
+  if TStringKit.IsFuzzyMatch('colour', 'color', 0.75, fmLevenshtein) then ;
+
+  if TStringKit.TryHexDecode('48656C6C6F', Decoded) then
+    WriteLn(Decoded); // Hello
+  if TStringKit.TryFromRoman('MMXXVI', Value) then
+    WriteLn(Value); // 2026
+
+  WriteLn(TStringKit.PercentEncode('a b'));   // a%20b
+  WriteLn(TStringKit.FormURLEncode('a b'));   // a+b
+  WriteLn(TStringKit.FleschReadingEase('The quick brown fox jumps.'));
+end;
+```
+
+- `TryHexDecode`, `TryDecode64`, and `TryFromRoman` return `False` and clear their `out` value for malformed input. The legacy decoders/parsers remain compatible: `HexDecode` retains permissive skipping, `Decode64` returns `''` on invalid input, and `FromRoman` remains permissive.
+- `TFuzzyMethod` is the recommended selector for `IsFuzzyMatch`; legacy integer methods keep their mappings (`0` Levenshtein, `1` Jaro-Winkler, `2` LCS) and unsupported values return `False`.
+- `PercentEncode`/`PercentDecode` preserve `+` and use `%20` for spaces. `FormURLEncode`/`FormURLDecode` implement form semantics with `+` for spaces. Legacy `URLEncode`/`URLDecode` delegate to the form APIs.
+- `FleschReadingEase` is the canonical name for the historical Flesch Reading Ease calculation. `FleschKincaidReadability` is retained as a legacy alias; `FleschKincaidGradeLevel` implements the grade-level formula. Both use heuristic English syllable counts.
+- Validators are practical common-syntax checks, not RFC-perfect validators or reachability checks. `IsValidDate` validates numeric component order and calendar ranges; it does not strictly parse every literal separator in the supplied format.
+- Indexes passed to `SubString` follow Pascal's 1-based `Copy` convention. `LeftStr` and `RightStr` use character counts. All current casing, URL, Hex, and word-token APIs operate on bytes/ASCII classifications rather than grapheme clusters.
 
 ### 🧩 Instance-Style API via Type Helpers
 
@@ -464,7 +496,7 @@ begin
   WordCount := TStringKit.CountWords('Hello, world! How are you?'); // Returns: 5
   
   // Readability scoring (0-100, higher = easier)
-  Readability := TStringKit.FleschKincaidReadability('The quick brown fox jumps.');
+  Readability := TStringKit.FleschReadingEase('The quick brown fox jumps.');
   WriteLn(Format('Readability score: %.1f', [Readability]));
   
   // N-gram generation for NLP

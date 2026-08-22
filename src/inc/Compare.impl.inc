@@ -37,3 +37,8 @@ function TStringHelperEx.IsFuzzyMatch(const S: string; Threshold: Double; Method
 begin
   Result := TStringKit.IsFuzzyMatch(Self, S, Threshold, Method);
 end;
+
+function TStringHelperEx.IsFuzzyMatch(const S: string; Threshold: Double; Method: TFuzzyMethod): Boolean;
+begin
+  Result := TStringKit.IsFuzzyMatch(Self, S, Threshold, Method);
+end;

@@ -17,3 +17,8 @@ function TStringHelperEx.FromRoman: Integer;
 begin
   Result := TStringKit.FromRoman(Self);
 end;
+
+function TStringHelperEx.TryFromRoman(out Value: Integer): Boolean;
+begin
+  Result := TStringKit.TryFromRoman(Self, Value);
+end;

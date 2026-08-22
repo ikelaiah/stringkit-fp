@@ -1,6 +1,6 @@
 ﻿Summary:
-TStringKit public count: 70
-Helper method count: 70
-Covered: 70
+TStringKit public count: 80
+Helper method count: 79
+Covered: 80
 Missing: 0
 Known different names: ReverseText->Reverse, CapitalizeText->Capitalize, Join->JoinWith

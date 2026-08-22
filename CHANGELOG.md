@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-08-22
+
+### Added
+
+- Identifier-aware ASCII case conversion for camel, Pascal, snake, and kebab case, including common acronym and digit boundaries.
+- `TFuzzyMethod` and a type-safe `IsFuzzyMatch` overload.
+- Strict non-throwing `TryHexDecode`, `TryDecode64`, and `TryFromRoman` APIs with predictable cleared output on failure.
+- Explicit `PercentEncode`/`PercentDecode` and `FormURLEncode`/`FormURLDecode` APIs.
+- `FleschReadingEase` and `FleschKincaidGradeLevel` while retaining `FleschKincaidReadability`.
+
+### Changed
+
+- Expanded practical URL validation to accept uppercase and modern-length TLDs.
+- Kept legacy `URLEncode`/`URLDecode` as form-style aliases and retained permissive `HexDecode` and `FromRoman` behavior.
+
+### Fixed
+
+- Prevented `Split` from looping on an empty delimiter.
+- Removed StringKit-owned FPC 3.2.2 warnings and notes.
+
+### Testing
+
+- Added deterministic API, helper-delegation, byte round-trip, identifier idempotence, and canonical Roman 1..3999 property coverage.
+
+### Documentation
+
+- Documented byte/ASCII limits, 1-based indexing, practical validator scope, Try API contracts, explicit URL semantics, and readability naming.
+- Added a permanent v1.x/v2 roadmap and refreshed helper coverage measurement.
+
+### Migration
+
+- No intentional breaking changes. Prefer `TFuzzyMethod`, `Try...` methods, explicit percent/form URL methods, and `FleschReadingEase` in new code.
+
 
 ## [2.0.0] - Unreleased
 
