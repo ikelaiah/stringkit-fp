@@ -22,6 +22,11 @@ class BuildDocsTests(unittest.TestCase):
         output = root / "site" / "1.9.1"
         site_root = output.parent
         (source / "start").mkdir(parents=True)
+        (root / "assets").mkdir()
+        (root / "assets" / "banner.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg"><title>StringKit-FP</title></svg>\n',
+            encoding="utf-8",
+        )
         (source / "index.md").write_text(
             "# StringKit-FP documentation\n\n"
             "Start with the [guide](start/guide.md).\n",
@@ -61,6 +66,10 @@ class BuildDocsTests(unittest.TestCase):
                     "project": [{"title": "GitHub repository", "url": "https://github.com/example/stringkit-fp"}],
                     "homepage": {
                         "tagline": "A modern string toolkit for Free Pascal and Lazarus.",
+                        "banner": {
+                            "project_path": "assets/banner.svg",
+                            "alt": "StringKit-FP yarn banner",
+                        },
                         "actions": [{"label": "Get Started", "path": "start/guide.md"}],
                     },
                 }
@@ -101,9 +110,16 @@ class BuildDocsTests(unittest.TestCase):
             self.assertIn('class="heading-anchor"', guide)
             self.assertIn('id="repeat-2"', guide)
             self.assertIn('id="version-select"', guide)
+            self.assertIn('class="homepage-banner"', index)
+            self.assertIn('src="assets/homepage-banner.svg"', index)
+            self.assertIn('alt="StringKit-FP yarn banner"', index)
             self.assertIn('<pre><code class="language-pascal">', guide)
             self.assertTrue((output / "assets" / "site.css").is_file())
             self.assertTrue((output / "assets" / "site.js").is_file())
+            self.assertEqual(
+                (source.parent / "assets" / "banner.svg").read_bytes(),
+                (output / "assets" / "homepage-banner.svg").read_bytes(),
+            )
             self.assertTrue((output / "search-index.json").is_file())
             self.assertTrue((output / "search-index.js").is_file())
             self.assertIn(':root[data-theme="dark"]', (output / "assets" / "site.css").read_text(encoding="utf-8"))
@@ -131,6 +147,17 @@ class BuildDocsTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "unsafe link"):
+                build_site(source, output, site_root, source / "versions.json")
+
+    def test_rejects_a_missing_homepage_banner_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, output, site_root = self.write_fixture(Path(directory))
+            layout_path = source / "layout.json"
+            layout = json.loads(layout_path.read_text(encoding="utf-8"))
+            layout["homepage"]["banner"]["project_path"] = "assets/missing.svg"
+            layout_path.write_text(json.dumps(layout), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "homepage banner asset does not exist"):
                 build_site(source, output, site_root, source / "versions.json")
 
     def test_links_project_markdown_to_its_repository_source(self) -> None:

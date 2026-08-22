@@ -352,6 +352,8 @@ blockquote p, .admonition p { margin: 0; }
 .home-card:hover { border-color: var(--accent); background: var(--surface-muted); color: var(--text); }
 .home-card strong { display: block; margin-top: 0.3rem; color: var(--heading); font-size: 1rem; }
 .home-card p { margin: 0.35rem 0 0; color: var(--text-muted); font-size: 0.86rem; }
+.homepage-banner { max-width: 72rem; margin: 0 0 2.5rem; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.homepage-banner img { display: block; width: 100%; height: auto; }
 .homepage > h2 { margin-top: 2.5rem; }
 
 .external-link::after { margin-left: 0.18em; font-size: 0.72em; content: "↗"; }

@@ -87,6 +87,10 @@ python tools/check_built_docs.py --site build/docs-site
 
 The existing library suite is compiled and run by GitHub Actions on Ubuntu and Windows. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [CHANGELOG.md](CHANGELOG.md) for release history.
 
+## Documentation site
+
+The generated documentation homepage is configured in [`docs/layout.json`](docs/layout.json). Its optional `homepage.banner` block names an SVG kept in the repository and supplies the image's alternative text. The generator copies that SVG to the built site's `assets/homepage-banner.svg` and renders it on the homepage; do not edit generated `index.html` files or add the banner to Markdown pages manually.
+
 ## License
 
 [MIT](LICENSE.md)
