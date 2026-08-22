@@ -114,6 +114,8 @@ type
     procedure Test77_TryDecodingContracts;
     procedure Test78_TryFromRoman;
     procedure Test79_ExplicitURLEncoding;
+    procedure Test80_ReadabilityAPIs;
+    procedure Test81_ValidatorContracts;
     // Number conversions
     procedure Test67_FromRoman;
     procedure Test68_ToRoman;
@@ -987,6 +989,22 @@ begin
     'a+b', 'a+b'.PercentDecode);
   AssertEquals('Helper form decoding should convert plus',
     'a b', 'a+b'.FormURLDecode);
+end;
+
+procedure TStringHelperTests.Test80_ReadabilityAPIs;
+const
+  Sample = 'The quick brown fox jumps over the lazy dog.';
+begin
+  AssertEquals('Helper should expose Flesch Reading Ease',
+    TStringKit.FleschReadingEase(Sample), Sample.FleschReadingEase, 0.000001);
+  AssertEquals('Helper should expose Flesch-Kincaid Grade Level',
+    TStringKit.FleschKincaidGradeLevel(Sample), Sample.FleschKincaidGradeLevel, 0.000001);
+end;
+
+procedure TStringHelperTests.Test81_ValidatorContracts;
+begin
+  AssertTrue('Helper URL validation should accept uppercase modern TLDs',
+    'https://example.MUSEUM'.IsValidURL);
 end;
 
 initialization

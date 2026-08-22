@@ -111,6 +111,9 @@ type
     procedure Test77_TryDecodingContracts;
     procedure Test78_TryFromRoman;
     procedure Test79_ExplicitURLEncoding;
+    procedure Test80_ReadabilityAPIs;
+    procedure Test81_ValidatorContracts;
+    procedure Test82_EmptyDelimiterSplit;
   end;
 
 implementation
@@ -1510,6 +1513,42 @@ begin
     TStringKit.PercentDecode(TStringKit.PercentEncode(Original)));
   Decoded := TStringKit.FormURLDecode(TStringKit.FormURLEncode(Original));
   AssertEquals('Form encoding should round-trip byte strings', Original, Decoded);
+end;
+
+procedure TStringTests.Test80_ReadabilityAPIs;
+const
+  Sample = 'The quick brown fox jumps over the lazy dog.';
+begin
+  AssertEquals('FleschReadingEase should expose the corrected public name',
+    TStringKit.FleschKincaidReadability(Sample), TStringKit.FleschReadingEase(Sample), 0.000001);
+  AssertEquals('Flesch Reading Ease should use the documented formula with heuristic syllables',
+    94.3, TStringKit.FleschReadingEase(Sample), 0.01);
+  AssertEquals('Flesch-Kincaid Grade Level should use the documented formula',
+    2.342222, TStringKit.FleschKincaidGradeLevel(Sample), 0.00001);
+  AssertEquals('Flesch Reading Ease should define an empty-input result',
+    0.0, TStringKit.FleschReadingEase(''), 0.000001);
+  AssertEquals('Flesch-Kincaid Grade Level should define an empty-input result',
+    0.0, TStringKit.FleschKincaidGradeLevel(''), 0.000001);
+end;
+
+procedure TStringTests.Test81_ValidatorContracts;
+begin
+  AssertTrue('URL validation should accept modern long TLDs',
+    TStringKit.IsValidURL('https://example.international'));
+  AssertTrue('URL validation should accept uppercase TLDs',
+    TStringKit.IsValidURL('https://example.MUSEUM'));
+  AssertFalse('URL validation should still reject a host without a TLD',
+    TStringKit.IsValidURL('https://example'));
+  AssertTrue('Date validation should retain component-order support',
+    TStringKit.IsValidDate('26/10/2023', 'dd-mm-yyyy'));
+end;
+
+procedure TStringTests.Test82_EmptyDelimiterSplit;
+var
+  Values: TStringDynArray;
+begin
+  Values := TStringKit.Split('unchanged', '');
+  AssertEquals('Empty delimiters should return an empty result instead of looping', 0, Length(Values));
 end;
 
 initialization

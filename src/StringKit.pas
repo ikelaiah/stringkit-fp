@@ -47,6 +47,8 @@ type
     class function TokenizeIdentifier(const Text: string): TStringDynArray; static;
     class function EncodeURL(const Text: string; SpaceAsPlus: Boolean): string; static;
     class function DecodeURL(const Text: string; PlusAsSpace: Boolean): string; static;
+    class procedure GetReadabilityCounts(const Text: string; out WordCount, SentenceCount,
+      SyllableCount: Integer); static;
     (*
       @description Checks if a character is considered whitespace.
                    Whitespace characters are space (#32), tab (#9), line feed (#10),
@@ -1692,7 +1694,9 @@ type
         
         Result := FleschKincaidReadability(''); // Returns: 0.0
     *)
+    class function FleschReadingEase(const Text: string): Double; static;
     class function FleschKincaidReadability(const Text: string): Double; static;
+    class function FleschKincaidGradeLevel(const Text: string): Double; static;
     
     (*
       @description Generates n-grams (sequences of N consecutive words) from a text.
@@ -2173,6 +2177,29 @@ begin
   end;
 end;
 
+class procedure TStringKit.GetReadabilityCounts(const Text: string; out WordCount,
+  SentenceCount, SyllableCount: Integer);
+var
+  Words: TStringDynArray;
+  I: Integer;
+begin
+  Words := GetWords(Text);
+  WordCount := Length(Words);
+  SentenceCount := 0;
+  SyllableCount := 0;
+  if WordCount = 0 then
+    Exit;
+
+  for I := 1 to Length(Text) do
+    if Text[I] in ['.', '!', '?'] then
+      Inc(SentenceCount);
+  if SentenceCount = 0 then
+    SentenceCount := 1;
+
+  for I := 0 to High(Words) do
+    SyllableCount := SyllableCount + CountVowelGroups(LowerCase(Words[I]));
+end;
+
 class function TStringKit.Trim(const Text: string): string;
 begin
   Result := SysUtils.Trim(Text);
@@ -2394,6 +2421,7 @@ var
   Ch: Char;
   InWord: Boolean;
 begin
+  Result := nil;
   WordList := TStringList.Create;
   try
     Word := '';
@@ -2876,10 +2904,9 @@ end;
 
 class function TStringKit.IsValidURL(const Text: string): Boolean;
 begin
-  // Match pattern for URLs
-  // This covers http, https, ftp protocols with domain names
-  Result := MatchesPattern(Text, '^(https?|ftp)://[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$') or
-           MatchesPattern(Text, '^(www)\.[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$');
+  // Practical common-syntax validation, including mixed-case TLDs up to 63 characters.
+  Result := MatchesPattern(Text, '^(https?|ftp)://[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-zA-Z]{2,63}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$') or
+           MatchesPattern(Text, '^(www)\.[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-zA-Z]{2,63}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$');
 end;
 
 class function TStringKit.IsValidIP(const Text: string): Boolean;
@@ -2907,7 +2934,6 @@ var
   FormatLC: string;
   TextCopy: string;
   I, DayPos, MonthPos, YearPos: Integer;
-  Ch: Char;
 begin
   // If empty text, not valid
   if Text = '' then
@@ -3086,8 +3112,8 @@ end;
 
 class function TStringKit.FormatFloat(const Value: Double; Decimals: Integer = 2; DecimalSeparator: Char = '.'; ThousandSeparator: Char = ','): string;
 var
-  I, IntegerPartLen: Integer;
-  IntegerPart, DecimalPart, FormattedIntegerPart: string;
+  I: Integer;
+  DecimalPart, FormattedIntegerPart: string;
   IntValue: Int64;
   DecValue: Int64;
   Factor: Int64;
@@ -3154,6 +3180,10 @@ var
   Remaining, Current: string;
   DelimPos: Integer;
 begin
+  Result := nil;
+  if Delimiter = '' then
+    Exit;
+
   SplitList := TStringList.Create;
   try
     Remaining := Text;
@@ -3503,63 +3533,44 @@ begin
   Result := Length(Words);
 end;
 
-class function TStringKit.FleschKincaidReadability(const Text: string): Double;
+class function TStringKit.FleschReadingEase(const Text: string): Double;
 var
-  Words: TStringDynArray;
-  Sentences, Syllables, I, WordCount: Integer;
-  Word: string;
+  WordCount, SentenceCount, SyllableCount: Integer;
 begin
-  // Count words
-  Words := GetWords(Text);
-  WordCount := Length(Words);
-  
+  GetReadabilityCounts(Text, WordCount, SentenceCount, SyllableCount);
   if WordCount = 0 then
-  begin
-    Result := 0;
-    Exit;
-  end;
-  
-  // Count sentences (roughly by counting sentence-ending punctuation)
-  Sentences := 0;
-  for I := 1 to Length(Text) do
-    if Text[I] in ['.', '!', '?'] then
-      Inc(Sentences);
-      
-  // Ensure at least one sentence
-  if Sentences = 0 then
-    Sentences := 1;
-  
-  // Count syllables (very approximate method)
-  Syllables := 0;
-  for I := 0 to High(Words) do
-  begin
-    Word := LowerCase(Words[I]);
-    
-    // Count vowel groups as syllables
-    // This is a very basic approximation
-    Syllables := Syllables + CountVowelGroups(Word);
-    
-    // Words with no detected syllables get at least one
-    if CountVowelGroups(Word) = 0 then
-      Inc(Syllables);
-  end;
-  
-  // Calculate Flesch Reading Ease score (keeps the legacy public method name)
-  // Formula: 206.835 - 1.015 * (words/sentences) - 84.6 * (syllables/words)
-  Result := 206.835 - 1.015 * (WordCount / Sentences) - 84.6 * (Syllables / WordCount);
-  
-  // Constrain the result between 0 and 100
+    Exit(0.0);
+
+  Result := 206.835 - 1.015 * (WordCount / SentenceCount) -
+    84.6 * (SyllableCount / WordCount);
   if Result < 0 then
     Result := 0
   else if Result > 100 then
     Result := 100;
 end;
 
+class function TStringKit.FleschKincaidReadability(const Text: string): Double;
+begin
+  Result := FleschReadingEase(Text);
+end;
+
+class function TStringKit.FleschKincaidGradeLevel(const Text: string): Double;
+var
+  WordCount, SentenceCount, SyllableCount: Integer;
+begin
+  GetReadabilityCounts(Text, WordCount, SentenceCount, SyllableCount);
+  if WordCount = 0 then
+    Exit(0.0);
+
+  Result := 0.39 * (WordCount / SentenceCount) +
+    11.8 * (SyllableCount / WordCount) - 15.59;
+end;
+
 class function TStringKit.GenerateNGrams(const Text: string; N: Integer): TStringDynArray;
 var
   Words: TStringDynArray;
   NGramList: TStringList;
-  I, J, NGramCount: Integer;
+  I, J: Integer;
   NGram: string;
 begin
   Result := nil;
