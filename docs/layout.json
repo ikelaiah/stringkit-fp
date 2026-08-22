@@ -53,6 +53,10 @@
   ],
   "homepage": {
     "tagline": "A modern string toolkit for Free Pascal and Lazarus.",
+    "banner": {
+      "project_path": "assets/stringkit-fp-banner.svg",
+      "alt": "StringKit-FP yarn-inspired banner"
+    },
     "actions": [
       { "label": "Get Started", "path": "start/beginner-guide.md" },
       { "label": "Browse Recipes", "path": "start/recipes.md" },

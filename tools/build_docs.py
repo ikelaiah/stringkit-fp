@@ -57,12 +57,19 @@ class ProjectLink:
 
 
 @dataclass(frozen=True)
+class HomepageBanner:
+    project_path: str
+    alt: str
+
+
+@dataclass(frozen=True)
 class DocumentationLayout:
     site_title: str
     description: str
     navigation: tuple[NavigationSection, ...]
     project_links: tuple[ProjectLink, ...]
     homepage: dict[str, object]
+    banner: HomepageBanner | None = None
     legacy: bool = False
 
     @property
@@ -177,6 +184,15 @@ def safe_document_path(value: object, label: str) -> str:
     return path.as_posix()
 
 
+def safe_project_asset_path(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError(f"{label} must be a non-empty slash-separated path")
+    path = Path(value)
+    if path.is_absolute() or path.drive or ".." in path.parts or path.suffix.lower() != ".svg":
+        raise ValueError(f"{label} must name an SVG file within the repository")
+    return path.as_posix()
+
+
 def legacy_navigation(source: Path) -> tuple[NavigationSection, ...]:
     grouped: dict[str, list[NavigationPage]] = {"Getting Started": [], "Guides": [], "Reference": []}
     for document in sorted(source.rglob("*.md")):
@@ -270,7 +286,24 @@ def load_layout(source: Path, config: SiteConfig) -> DocumentationLayout:
         homepage = data.get("homepage", {})
         if not isinstance(homepage, dict):
             raise ValueError("homepage must be an object")
-        return DocumentationLayout(site_title, description, tuple(navigation), tuple(project_links), homepage)
+        banner = homepage.get("banner")
+        homepage_banner = None
+        if banner is not None:
+            if not isinstance(banner, dict):
+                raise ValueError("homepage banner must be an object")
+            project_path = safe_project_asset_path(banner.get("project_path"), "homepage banner project_path")
+            alt = banner.get("alt")
+            if not isinstance(alt, str) or not alt.strip():
+                raise ValueError("homepage banner alt must be a non-empty string")
+            asset = (source.parent / project_path).resolve()
+            try:
+                asset.relative_to(source.parent.resolve())
+            except ValueError as exc:
+                raise ValueError("homepage banner project_path must stay within the repository") from exc
+            if not asset.is_file():
+                raise ValueError(f"homepage banner asset does not exist: {project_path}")
+            homepage_banner = HomepageBanner(project_path, alt.strip())
+        return DocumentationLayout(site_title, description, tuple(navigation), tuple(project_links), homepage, homepage_banner)
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid documentation layout {layout_path}: {exc}") from exc
 
@@ -496,7 +529,12 @@ def homepage_content(layout: DocumentationLayout, page: Path, output: Path) -> s
                 continue
             cards.append(f'<a class="home-card" href="{html.escape(href, quote=True)}"><span>{html.escape(card["eyebrow"])}</span><strong>{html.escape(card["title"])}</strong><p>{html.escape(card["description"])}</p></a>')
     hero = f'<section class="home-hero"><p class="eyebrow">Documentation</p><h1>{html.escape(layout.site_title.replace(" documentation", ""))}</h1><p>{tagline}</p><div class="hero-actions">{"".join(actions)}</div></section>'
-    return hero + (f'<section class="home-grid" aria-label="Documentation paths">{"".join(cards)}</section>' if cards else "")
+    cards_html = f'<section class="home-grid" aria-label="Documentation paths">{"".join(cards)}</section>' if cards else ""
+    banner_html = ""
+    if layout.banner:
+        banner_url = relative_url(page.parent, output / "assets" / "homepage-banner.svg")
+        banner_html = f'<figure class="homepage-banner"><img src="{html.escape(banner_url, quote=True)}" alt="{html.escape(layout.banner.alt, quote=True)}"></figure>'
+    return hero + cards_html + banner_html
 
 
 def remove_first_heading(body: str) -> str:
@@ -536,13 +574,15 @@ def prepare_output(output: Path, release: str) -> None:
     output.mkdir(parents=True, exist_ok=True); marker.write_text(release + "\n", encoding="utf-8")
 
 
-def copy_assets(output: Path) -> None:
+def copy_assets(output: Path, project_root: Path, layout: DocumentationLayout) -> None:
     assets = output / "assets"; assets.mkdir()
     for name in ("site.css", "site.js"):
         source = DOC_ASSETS / name
         if not source.is_file():
             raise ValueError(f"missing documentation asset: {source}")
         shutil.copy2(source, assets / name)
+    if layout.banner:
+        shutil.copy2(project_root / layout.banner.project_path, assets / "homepage-banner.svg")
 
 
 def write_landing_page(site_root: Path, config: SiteConfig) -> None:
@@ -571,7 +611,7 @@ def build_site(source: Path, output: Path, site_root: Path, versions_path: Path,
     documents = sorted(source.rglob("*.md"))
     if not documents:
         raise ValueError(f"no Markdown documents found in {source}")
-    validate_source_links(source, documents, source.parent); prepare_output(output, config.release); copy_assets(output)
+    validate_source_links(source, documents, source.parent); prepare_output(output, config.release); copy_assets(output, source.parent, layout)
     search_entries: list[dict[str, object]] = []; by_path = {item.path: item for item in layout.pages}
     for document in documents:
         relative = document.relative_to(source); relative_path = relative.as_posix(); page = output / relative.with_suffix(".html"); page.parent.mkdir(parents=True, exist_ok=True)
