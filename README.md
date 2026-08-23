@@ -91,6 +91,8 @@ The existing library suite is compiled and run by GitHub Actions on Ubuntu and W
 
 The generated documentation homepage is configured in [`docs/layout.json`](docs/layout.json). Its optional `homepage.banner` block names an SVG kept in the repository and supplies the image's alternative text. The generator copies that SVG to the built site's `assets/homepage-banner.svg` and renders it on the homepage; do not edit generated `index.html` files or add the banner to Markdown pages manually.
 
+Use `python tools/build_all_docs.py --development-current --site-root build/docs-site` to preview untagged documentation from the checkout. Published release documentation must use `--released`, which builds every declared version (including the current one) from the immutable `source_ref` in [`docs/versions.json`](docs/versions.json). The Pages workflow uses that released mode for both release events and manual rebuilds.
+
 ## License
 
 [MIT](LICENSE.md)

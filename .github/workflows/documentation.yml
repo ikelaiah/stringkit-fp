@@ -2,11 +2,6 @@ name: Publish documentation
 
 on:
   workflow_dispatch:
-    inputs:
-      source_ref:
-        description: Source ref to publish as the current documentation release
-        required: true
-        default: main
   release:
     types: [published]
 
@@ -26,7 +21,7 @@ jobs:
       - name: Check out documentation source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.source_ref }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
           fetch-depth: 0
 
       - name: Test documentation tooling
@@ -43,7 +38,7 @@ jobs:
 
       - name: Build versioned documentation
         run: |
-          python3 tools/build_all_docs.py --site-root site --offline-dir artifacts
+          python3 tools/build_all_docs.py --released --site-root site --offline-dir artifacts
           python3 tools/check_built_docs.py --site site
 
       - name: Configure GitHub Pages
