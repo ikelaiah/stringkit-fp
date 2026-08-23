@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+
+- Added the generated StringKit-FP homepage SVG banner and refined its width for readable alignment with the documentation content.
+- Made published, versioned documentation rebuild every release from the immutable `source_ref` declared in `docs/versions.json`; development builds continue to preview the current checkout explicitly.
+
 ## [1.9.2] - 2026-08-22
 
 ### Documentation Experience
