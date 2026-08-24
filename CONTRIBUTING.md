@@ -154,6 +154,10 @@ We especially welcome documentation improvements:
 - Add missing documentation
 - Translate documentation
 
+### Versioned documentation policy
+
+Versioned documentation preserves the documentation that existed at each historical release. Older releases may therefore contain fewer pages than newer releases. Each declared version in `docs/versions.json` is rebuilt from its immutable `source_ref` tag; never copy current documentation into an older release or edit historical tags.
+
 ## ⭐ Recognition
 
 Contributors will be recognized in:

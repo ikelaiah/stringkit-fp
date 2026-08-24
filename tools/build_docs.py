@@ -211,8 +211,29 @@ def legacy_navigation(source: Path) -> tuple[NavigationSection, ...]:
     return tuple(NavigationSection(title, tuple(pages)) for title, pages in grouped.items() if pages)
 
 
+def legacy_layout(source: Path) -> DocumentationLayout:
+    """Describe a historical release that predates documentation layouts.
+
+    Navigation is derived only from the Markdown files that exist in the
+    historical source so sparse releases stay historically accurate.
+    """
+    documents = sorted(path.relative_to(source).as_posix() for path in source.rglob("*.md"))
+    if not documents:
+        raise ValueError(f"no Markdown documents found in {source}")
+    return DocumentationLayout(
+        "StringKit-FP documentation",
+        "Practical StringKit-FP documentation for Free Pascal and Lazarus.",
+        legacy_navigation(source),
+        tuple(),
+        {},
+        legacy=True,
+    )
+
+
 def load_layout(source: Path, config: SiteConfig) -> DocumentationLayout:
     layout_path = source / "layout.json"
+    if not layout_path.is_file():
+        return legacy_layout(source)
     try:
         data = json.loads(layout_path.read_text(encoding="utf-8"))
         schema = data.get("schema_version")
@@ -541,6 +562,26 @@ def remove_first_heading(body: str) -> str:
     return re.sub(r"^<h1\b[^>]*>.*?</h1>\n?", "", body, count=1, flags=re.DOTALL)
 
 
+def landing_content(layout: DocumentationLayout, page: Path, output: Path, config: SiteConfig) -> RenderedDocument:
+    """Build a minimal landing shell that links to this release's real pages.
+
+    Used only when a historical release shipped no ``index.md`` so no historical
+    content is invented.
+    """
+    items = "".join(
+        f'<li><a href="{html.escape(nav_href(page, output, item.path), quote=True)}">{html.escape(item.title)}</a></li>'
+        for item in layout.pages
+    )
+    body = (
+        '<section><h2 id="documentation-in-this-release">Documentation in this release</h2>'
+        f"<p>StringKit-FP {html.escape(config.release)} documentation preserved from the "
+        f"<code>{html.escape(config.source_ref)}</code> source snapshot.</p>"
+        f"<ul>{items}</ul></section>"
+    )
+    text = plain_markdown(f"Documentation in this release StringKit-FP {config.release} documentation")
+    return RenderedDocument(body, tuple(), text)
+
+
 def page_shell(title: str, rendered: RenderedDocument, config: SiteConfig, layout: DocumentationLayout, current: NavigationPage | None, page: Path, output: Path, relative: str) -> str:
     stylesheet = relative_url(page.parent, output / "assets" / "site.css"); script = relative_url(page.parent, output / "assets" / "site.js"); search_script = relative_url(page.parent, output / "search-index.js")
     home = relative == "index.md"; body = remove_first_heading(rendered.body) if home else rendered.body
@@ -613,14 +654,23 @@ def build_site(source: Path, output: Path, site_root: Path, versions_path: Path,
         raise ValueError(f"no Markdown documents found in {source}")
     validate_source_links(source, documents, source.parent); prepare_output(output, config.release); copy_assets(output, source.parent, layout)
     search_entries: list[dict[str, object]] = []; by_path = {item.path: item for item in layout.pages}
+    has_home = False
     for document in documents:
-        relative = document.relative_to(source); relative_path = relative.as_posix(); page = output / relative.with_suffix(".html"); page.parent.mkdir(parents=True, exist_ok=True)
+        relative = document.relative_to(source); relative_path = relative.as_posix()
+        if relative_path == "index.md":
+            has_home = True
+        page = output / relative.with_suffix(".html"); page.parent.mkdir(parents=True, exist_ok=True)
         rendered = markdown_to_html(document.read_text(encoding="utf-8"), link_resolver(document, page, source, output, source.parent, config))
         fallback = by_path.get(relative_path, NavigationPage(relative_path, relative.stem, "Documentation"))
         title = next((text for level, text, _identifier in rendered.headings if level == 1), fallback.title)
         page.write_text(page_shell(title, rendered, config, layout, by_path.get(relative_path), page, output, relative_path), encoding="utf-8")
         item = by_path.get(relative_path)
         search_entries.append({"title": title, "section": item.section if item else "Documentation", "headings": [text for level, text, _identifier in rendered.headings if level >= 2], "url": relative.with_suffix(".html").as_posix(), "text": rendered.text})
+    if not has_home:
+        landing = output / "index.html"
+        rendered_landing = landing_content(layout, landing, output, config)
+        title = f"StringKit-FP {config.release} documentation"
+        landing.write_text(page_shell(title, rendered_landing, config, layout, None, landing, output, "index.md"), encoding="utf-8")
     search_json = json.dumps(search_entries, ensure_ascii=False, separators=(",", ":"))
     (output / "search-index.json").write_text(json.dumps(search_entries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (output / "search-index.js").write_text("globalThis.StringKitSearchIndex=" + search_json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026") + ";\n", encoding="utf-8")

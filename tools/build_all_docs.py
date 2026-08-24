@@ -34,6 +34,16 @@ def run_git(root: Path, arguments: list[str]) -> None:
         raise RuntimeError(f"git {' '.join(arguments)} failed:\n{result.stdout}{result.stderr}")
 
 
+def git_ref_resolves(root: Path, ref: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
 def build_all(
     root: Path,
     site_root: Path,
@@ -50,6 +60,13 @@ def build_all(
     root = root.resolve()
     versions_path = root / "docs" / "versions.json"
     current, versions = load_versions(versions_path)
+    unresolvable = [
+        f"{entry['release']} -> {entry['source_ref']}"
+        for entry in versions
+        if not (development_current and entry["release"] == current) and not git_ref_resolves(root, entry["source_ref"])
+    ]
+    if unresolvable:
+        raise ValueError(f"source_ref(s) do not resolve to a commit: {', '.join(unresolvable)}")
     page_count = 0
     with tempfile.TemporaryDirectory(prefix="stringkit-fp-docs-") as temporary:
         checkout_root = Path(temporary)
