@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the generated StringKit-FP homepage SVG banner and refined its width for readable alignment with the documentation content.
 - Made published, versioned documentation rebuild every release from the immutable `source_ref` declared in `docs/versions.json`; development builds continue to preview the current checkout explicitly.
+- Extended the documentation version selector with the full tagged history (`1.9.0`, `1.8.1`, `1.8.0`, `1.7.0`, and `1.0.0`), building each release only from the Markdown that existed in its own Git tag.
+- Added legacy-layout support so historical releases without a modern `layout.json` render their preserved Markdown with automatically derived navigation and, when no `index.md` exists, a minimal generated landing page linking to that release's real documents.
+- Hardened release validation: `build_all_docs.py` now fails clearly when any declared `source_ref` does not resolve, and `check_built_docs.py` verifies newest-to-oldest ordering, unique releases, current-release membership, and per-release `source_ref` agreement.
 
 ## [1.9.2] - 2026-08-22
 

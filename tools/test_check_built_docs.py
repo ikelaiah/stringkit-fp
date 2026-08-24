@@ -74,6 +74,51 @@ class CheckBuiltDocsTests(unittest.TestCase):
             errors = check_site(site)
             self.assertTrue(any("missing required asset" in error for error in errors))
 
+    def rewrite_manifest(self, site: Path, versions: list[dict[str, str]], current: str = "1.9.1") -> None:
+        (site / "versions.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "current": current,
+                    "site_url": "https://example.invalid/stringkit-fp",
+                    "repository_url": "https://github.com/example/stringkit-fp",
+                    "versions": versions,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_reports_versions_ordered_other_than_newest_to_oldest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            self.rewrite_manifest(site, [{"release": "1.8.0", "source_ref": "v1.8.0"}, {"release": "1.9.1", "source_ref": "v1.9.1"}])
+            self.assertTrue(any("ordered newest to oldest" in error for error in check_site(site)))
+
+    def test_reports_duplicate_release_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            self.rewrite_manifest(site, [{"release": "1.9.1", "source_ref": "v1.9.1"}, {"release": "1.9.1", "source_ref": "v1.9.1"}])
+            self.assertTrue(any("duplicate release entries" in error for error in check_site(site)))
+
+    def test_reports_a_current_release_missing_from_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            self.rewrite_manifest(
+                site,
+                [{"release": "1.9.0", "source_ref": "v1.9.0"}, {"release": "1.8.0", "source_ref": "v1.8.0"}],
+                current="1.9.1",
+            )
+            self.assertTrue(any("absent from versions" in error for error in check_site(site)))
+
+    def test_reports_a_built_source_ref_that_differs_from_the_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = self.build_fixture(Path(directory))
+            identity = site / "1.9.1" / "release.json"
+            release = json.loads(identity.read_text(encoding="utf-8"))
+            release["source_ref"] = "v9.9.9"
+            identity.write_text(json.dumps(release), encoding="utf-8")
+            self.assertTrue(any("differs from the declared metadata" in error for error in check_site(site)))
+
 
 if __name__ == "__main__":
     unittest.main()

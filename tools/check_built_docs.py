@@ -100,15 +100,33 @@ def check_page(page: Path, site: Path, release: str) -> list[str]:
     return errors
 
 
+def release_order_key(value: str) -> tuple[int, ...]:
+    try:
+        return tuple(int(part) for part in value.split("."))
+    except ValueError as exc:
+        raise ValueError(f"release {value!r} must use numeric dot-separated segments") from exc
+
+
 def check_site(site: Path) -> list[str]:
     site = site.resolve()
     errors: list[str] = []
+    releases: list[str] = []
+    declared_refs: dict[str, str] = {}
     try:
         manifest = json.loads((site / "versions.json").read_text(encoding="utf-8"))
         current = str(manifest["current"])
         entries = manifest["versions"]
         if not isinstance(entries, list) or not entries:
             raise ValueError("versions must be a non-empty list")
+        releases = [str(entry["release"]) for entry in entries]
+        duplicates = sorted({release for release in releases if releases.count(release) > 1})
+        if duplicates:
+            raise ValueError(f"duplicate release entries: {', '.join(duplicates)}")
+        if releases != sorted(releases, key=release_order_key, reverse=True):
+            raise ValueError("versions must be ordered newest to oldest")
+        if current not in releases:
+            raise ValueError(f"current release {current!r} is absent from versions")
+        declared_refs = {str(entry["release"]): str(entry["source_ref"]) for entry in entries}
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         return [f"{site / 'versions.json'}: invalid version metadata: {exc}"]
     landing = site / "index.html"
@@ -124,6 +142,8 @@ def check_site(site: Path) -> list[str]:
             identity = json.loads((directory / "release.json").read_text(encoding="utf-8"))
             if identity.get("release") != release or not identity.get("source_ref"):
                 raise ValueError("release/source_ref identity mismatch")
+            if identity.get("source_ref") != declared_refs.get(release):
+                raise ValueError("built source_ref differs from the declared metadata")
             indexed = json.loads((directory / "search-index.json").read_text(encoding="utf-8"))
             if not isinstance(indexed, list) or not indexed:
                 raise ValueError("search index must be a non-empty list")

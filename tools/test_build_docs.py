@@ -203,6 +203,102 @@ class BuildDocsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not declared"):
                 build_site(source, output, site_root, source / "versions.json", release="2.0.0")
 
+    @staticmethod
+    def write_legacy_fixture(root: Path, documents: dict[str, str]) -> tuple[Path, Path, Path]:
+        source = root / "docs"
+        output = root / "site" / "1.8.0"
+        site_root = output.parent
+        source.mkdir(parents=True)
+        for name, body in documents.items():
+            (source / name).write_text(body, encoding="utf-8")
+        versions = source / "versions.json"
+        versions.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "current": "1.9.1",
+                    "site_url": "https://example.invalid/stringkit-fp",
+                    "repository_url": "https://github.com/example/stringkit-fp",
+                    "versions": [
+                        {"release": "1.9.1", "source_ref": "v1.9.1"},
+                        {"release": "1.8.0", "source_ref": "v1.8.0"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return source, output, site_root
+
+    def test_builds_a_legacy_release_without_a_layout_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, output, site_root = self.write_legacy_fixture(
+                Path(directory),
+                {
+                    "cheat-sheet.md": "# Historical Cheat Sheet\n\nSparse historical reference.\n",
+                    "helper-coverage.md": "# Historical Helper Coverage\n\nSparse historical inventory.\n",
+                },
+            )
+
+            build_site(source, output, site_root, source / "versions.json", release="1.8.0")
+
+            generated = sorted(path.relative_to(output).as_posix() for path in output.rglob("*.html"))
+            self.assertEqual(["cheat-sheet.html", "helper-coverage.html", "index.html"], generated)
+            landing = (output / "index.html").read_text(encoding="utf-8")
+            self.assertIn("Documentation in this release", landing)
+            self.assertIn('href="cheat-sheet.html"', landing)
+            self.assertIn('href="helper-coverage.html"', landing)
+            self.assertIn("preserved from the", landing)
+            cheat_sheet = (output / "cheat-sheet.html").read_text(encoding="utf-8")
+            self.assertIn("Historical Cheat Sheet", cheat_sheet)
+            self.assertIn(">Documentation<", cheat_sheet)
+            identity = json.loads((output / "release.json").read_text(encoding="utf-8"))
+            self.assertEqual("1.8.0", identity["release"])
+            self.assertEqual("v1.8.0", identity["source_ref"])
+
+    def test_historical_pages_do_not_include_other_release_documentation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, output, site_root = self.write_legacy_fixture(
+                Path(directory),
+                {"cheat-sheet.md": "# Historical Cheat Sheet\n\nOnly historical content here.\n"},
+            )
+
+            build_site(source, output, site_root, source / "versions.json", release="1.8.0")
+
+            for page in output.rglob("*.html"):
+                self.assertNotIn("Beginner Guide", page.read_text(encoding="utf-8"), page)
+
+    def test_sparse_single_document_legacy_release_builds(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, output, site_root = self.write_legacy_fixture(
+                Path(directory),
+                {"cheat-sheet.md": "# Historical Cheat Sheet\n\nThe only historical document.\n"},
+            )
+
+            count = build_site(source, output, site_root, source / "versions.json", release="1.8.0")
+
+            self.assertEqual(1, count)
+            landing = (output / "index.html").read_text(encoding="utf-8")
+            self.assertIn('href="cheat-sheet.html"', landing)
+            self.assertNotIn('href="helper-coverage.html"', landing)
+
+    def test_selector_declares_history_and_marks_the_current_release(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source, _output, site_root = self.write_legacy_fixture(
+                Path(directory),
+                {"cheat-sheet.md": "# Historical Cheat Sheet\n\nHistorical.\n"},
+            )
+            versions = source / "versions.json"
+
+            build_site(source, site_root / "1.9.1", site_root, versions, release="1.9.1")
+            build_site(source, site_root / "1.8.0", site_root, versions, release="1.8.0")
+
+            page = (site_root / "1.9.1" / "cheat-sheet.html").read_text(encoding="utf-8")
+            self.assertIn('<option value="index.html" selected>v1.9.1 (current)</option>', page)
+            self.assertIn('<option value="../1.8.0/index.html">v1.8.0</option>', page)
+            historical_page = (site_root / "1.8.0" / "cheat-sheet.html").read_text(encoding="utf-8")
+            self.assertIn('value="../1.9.1/index.html"', historical_page)
+            self.assertIn('<option value="index.html" selected>v1.8.0</option>', historical_page)
+
 
 if __name__ == "__main__":
     unittest.main()

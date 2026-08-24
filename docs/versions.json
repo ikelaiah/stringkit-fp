@@ -11,6 +11,26 @@
     {
       "release": "1.9.1",
       "source_ref": "v1.9.1"
+    },
+    {
+      "release": "1.9.0",
+      "source_ref": "v1.9.0"
+    },
+    {
+      "release": "1.8.1",
+      "source_ref": "v1.8.1"
+    },
+    {
+      "release": "1.8.0",
+      "source_ref": "v1.8.0"
+    },
+    {
+      "release": "1.7.0",
+      "source_ref": "v1.7.0"
+    },
+    {
+      "release": "1.0.0",
+      "source_ref": "v1.0.0"
     }
   ]
 }
