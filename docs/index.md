@@ -27,8 +27,8 @@ StringKit-FP is a modern, lightweight string toolkit for Free Pascal and Lazarus
 
 ## Project
 
-- [Changelog](../CHANGELOG.md)
-- [Roadmap](../ROADMAP.md)
-- [Contributing](../CONTRIBUTING.md)
+- [Changelog](https://github.com/ikelaiah/stringkit-fp/blob/main/CHANGELOG.md)
+- [Roadmap](https://github.com/ikelaiah/stringkit-fp/blob/main/ROADMAP.md)
+- [Contributing](https://github.com/ikelaiah/stringkit-fp/blob/main/CONTRIBUTING.md)
 
-The online site is versioned. The top-level site opens the current release; `/1.9.2/` is the current documentation path and `/1.9.1/` remains a stable historical release. The version selector opens a release root when a page is not shared by every version.
+The online site is built with DocSprout and published from each release. Version history restarts with the DocSprout pipeline, so the site currently documents the latest release only.

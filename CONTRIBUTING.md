@@ -156,7 +156,7 @@ We especially welcome documentation improvements:
 
 ### Versioned documentation policy
 
-Versioned documentation preserves the documentation that existed at each historical release. Older releases may therefore contain fewer pages than newer releases. Each declared version in `docs/versions.json` is rebuilt from its immutable `source_ref` tag; never copy current documentation into an older release or edit historical tags.
+Documentation history restarts with the DocSprout pipeline, so the published site currently documents the latest release only. If a `docs/versions.json` history is introduced later, each declared version is rebuilt from its immutable `source_ref` tag; never copy current documentation into an older release or edit historical tags.
 
 ## ⭐ Recognition
 

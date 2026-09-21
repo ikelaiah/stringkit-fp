@@ -23,7 +23,7 @@ end.
 
 **Expected output:** `Ada Lovelace`
 
-**Caveat:** This handles the library’s ordinary byte whitespace characters; it is not Unicode whitespace normalisation. [Source program](../../examples/documentation/01_normalize_input.pas).
+**Caveat:** This handles the library’s ordinary byte whitespace characters; it is not Unicode whitespace normalisation. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/01_normalize_input.pas).
 
 ## Convert HelloWorld to hello_world
 
@@ -52,7 +52,7 @@ hello_world
 SnakeCase
 ```
 
-**Caveat:** Identifier tokenisation is ASCII/byte-oriented. [Source program](../../examples/documentation/02_identifier_cases.pas).
+**Caveat:** Identifier tokenisation is ASCII/byte-oriented. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/02_identifier_cases.pas).
 
 ## Convert snake_case to PascalCase
 
@@ -81,7 +81,7 @@ hello_world
 SnakeCase
 ```
 
-**Caveat:** The same program demonstrates both identifier conversions. [Source program](../../examples/documentation/02_identifier_cases.pas).
+**Caveat:** The same program demonstrates both identifier conversions. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/02_identifier_cases.pas).
 
 ## Split a simple delimited string and join strings
 
@@ -114,7 +114,7 @@ end.
 red | green | blue
 ```
 
-**Caveat:** `Split` is for simple delimiters, not a full CSV parser with quoted fields. `TStringDynArray` is declared by `Types`. [Source program](../../examples/documentation/03_split_and_join.pas).
+**Caveat:** `Split` is for simple delimiters, not a full CSV parser with quoted fields. `TStringDynArray` is declared by `Types`. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/03_split_and_join.pas).
 
 ## Validate an email
 
@@ -138,7 +138,7 @@ end.
 
 **Expected output:** `True`
 
-**Caveat:** This is a practical syntax check, not confirmation that a mailbox exists or full RFC validation. [Source program](../../examples/documentation/04_validate_email.pas).
+**Caveat:** This is a practical syntax check, not confirmation that a mailbox exists or full RFC validation. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/04_validate_email.pas).
 
 ## Validate IPv4 and IPv6
 
@@ -168,7 +168,7 @@ True
 True
 ```
 
-**Caveat:** Validation does not establish network reachability. [Source program](../../examples/documentation/05_validate_ip.pas).
+**Caveat:** Validation does not establish network reachability. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/05_validate_ip.pas).
 
 ## Encode HTML
 
@@ -191,7 +191,7 @@ end.
 
 **Expected output:** `&lt;b&gt;Hello&lt;/b&gt;`
 
-**Caveat:** This encodes the five essential HTML characters. Contexts such as JavaScript and CSS need their own safe handling. [Source program](../../examples/documentation/06_html_encode.pas).
+**Caveat:** This encodes the five essential HTML characters. Contexts such as JavaScript and CSS need their own safe handling. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/06_html_encode.pas).
 
 ## Form URL encoding and percent encoding
 
@@ -220,7 +220,7 @@ a%20b%2Bc
 a+b%2Bc
 ```
 
-**Caveat:** Spaces differ: percent encoding uses `%20`, while form encoding uses `+`. [Source program](../../examples/documentation/07_url_encoding.pas).
+**Caveat:** Spaces differ: percent encoding uses `%20`, while form encoding uses `+`. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/07_url_encoding.pas).
 
 ## Decode hex safely
 
@@ -246,7 +246,7 @@ end.
 
 **Expected output:** `Hello`
 
-**Caveat:** On malformed input the function returns `False` and clears `Decoded`. [Source program](../../examples/documentation/08_try_hex_decode.pas).
+**Caveat:** On malformed input the function returns `False` and clears `Decoded`. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/08_try_hex_decode.pas).
 
 ## Decode Base64 safely
 
@@ -272,7 +272,7 @@ end.
 
 **Expected output:** `Hello`
 
-**Caveat:** `TryDecode64` accepts whitespace in valid Base64 text; malformed input returns `False` and clears `Decoded`. [Source program](../../examples/documentation/09_try_base64_decode.pas).
+**Caveat:** `TryDecode64` accepts whitespace in valid Base64 text; malformed input returns `False` and clears `Decoded`. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/09_try_base64_decode.pas).
 
 ## Convert Roman numerals safely
 
@@ -298,7 +298,7 @@ end.
 
 **Expected output:** `2026`
 
-**Caveat:** The strict parser accepts canonical values from 1 through 3999 and clears `Value` when it returns `False`. [Source program](../../examples/documentation/10_try_roman.pas).
+**Caveat:** The strict parser accepts canonical values from 1 through 3999 and clears `Value` when it returns `False`. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/10_try_roman.pas).
 
 ## Compare two strings approximately
 
@@ -323,7 +323,7 @@ end.
 
 **Expected output:** `True`
 
-**Caveat:** A threshold is a product decision; test it with your real data. [Source program](../../examples/documentation/11_fuzzy_match.pas).
+**Caveat:** A threshold is a product decision; test it with your real data. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/11_fuzzy_match.pas).
 
 ## Calculate readability
 
@@ -346,7 +346,7 @@ end.
 
 **Expected output:** `100.00`
 
-**Caveat:** Syllables are estimated heuristically for English text. [Source program](../../examples/documentation/12_readability.pas).
+**Caveat:** Syllables are estimated heuristically for English text. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/12_readability.pas).
 
 ## Extract text with a regular expression
 
@@ -380,4 +380,4 @@ end.
 #7
 ```
 
-**Caveat:** Patterns use Free Pascal’s `RegExpr` syntax. [Source program](../../examples/documentation/13_regex_extract.pas).
+**Caveat:** Patterns use Free Pascal’s `RegExpr` syntax. [Source program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/13_regex_extract.pas).

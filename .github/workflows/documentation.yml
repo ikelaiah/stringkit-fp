@@ -24,22 +24,30 @@ jobs:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
           fetch-depth: 0
 
-      - name: Test documentation tooling
+      - name: Install DocSprout
         run: |
-          python3 tools/test_build_docs.py
-          python3 tools/test_build_all_docs.py
-          python3 tools/test_check_built_docs.py
-          python3 tools/test_check_docs.py
-          python3 tools/check_docs.py
+          python3 -m venv .docsprout
+          .docsprout/bin/python -m pip install --disable-pip-version-check "https://github.com/ikelaiah/docsprout/archive/refs/tags/v1.1.2.zip"
 
-      - name: Read documentation release
+      - name: Validate documentation
+        run: |
+          .docsprout/bin/python -m docsprout check
+          .docsprout/bin/python -m docsprout audit --strict
+
+      - name: Determine release label
         id: version
-        run: echo "release=$(python3 -c 'import json; print(json.load(open("docs/versions.json"))["current"])')" >> "$GITHUB_OUTPUT"
-
-      - name: Build versioned documentation
         run: |
-          python3 tools/build_all_docs.py --released --site-root site --offline-dir artifacts
-          python3 tools/check_built_docs.py --site site
+          release="${{ github.event.release.tag_name }}"
+          release="${release#v}"
+          if [ -z "$release" ]; then release="preview"; fi
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      - name: Build documentation
+        run: |
+          .docsprout/bin/python -m docsprout build \
+            --output site \
+            --release "${{ steps.version.outputs.release }}" \
+            --offline-archive "artifacts/stringkit-fp-docs-${{ steps.version.outputs.release }}.zip"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

@@ -76,14 +76,11 @@ jobs:
       - name: Validate documentation on Ubuntu
         if: runner.os == 'Linux'
         run: |
-          python3 tools/test_build_docs.py
-          python3 tools/test_build_all_docs.py
-          python3 tools/test_check_built_docs.py
-          python3 tools/test_check_docs.py
-          python3 tools/check_docs.py
+          python3 -m venv .docsprout-venv
+          .docsprout-venv/bin/python -m pip install --disable-pip-version-check "https://github.com/ikelaiah/docsprout/archive/refs/tags/v1.1.2.zip"
+          .docsprout-venv/bin/python -m docsprout check
+          .docsprout-venv/bin/python -m docsprout audit --strict
           python3 tools/test_docs_examples.py
-          python3 tools/build_all_docs.py --site-root build/docs-site
-          python3 tools/check_built_docs.py --site build/docs-site
 
       - name: Compile documentation examples on Windows
         if: runner.os == 'Windows'

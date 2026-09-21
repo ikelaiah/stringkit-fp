@@ -77,21 +77,34 @@ See [Contracts and limitations](docs/reference/contracts-and-limitations.md) and
 
 ## Verification
 
-On a system with FPC 3.2.2:
+On a system with FPC 3.2.2 and [DocSprout](https://github.com/ikelaiah/docsprout) installed:
 
 ```text
 python tools/test_docs_examples.py
-python tools/build_all_docs.py --site-root build/docs-site
-python tools/check_built_docs.py --site build/docs-site
+python -m docsprout check
+python -m docsprout audit --strict
 ```
 
-The existing library suite is compiled and run by GitHub Actions on Ubuntu and Windows. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [CHANGELOG.md](CHANGELOG.md) for release history.
+The library suite, documentation examples, and documentation site are validated by GitHub Actions on Ubuntu and Windows. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Documentation site
 
-The generated documentation homepage is configured in [`docs/layout.json`](docs/layout.json). Its optional `homepage.banner` block names an SVG kept in the repository and supplies the image's alternative text. The generator copies that SVG to the built site's `assets/homepage-banner.svg` and renders it on the homepage; do not edit generated `index.html` files or add the banner to Markdown pages manually.
+The documentation site is built with [DocSprout](https://github.com/ikelaiah/docsprout). Markdown lives in [`README.md`](README.md) and `docs/`; [`docs/layout.json`](docs/layout.json) controls the published pages and navigation, and [`docs/docsprout.json`](docs/docsprout.json) holds the project identity, the teal colour preset, the banner, and the homepage cards.
 
-Use `python tools/build_all_docs.py --development-current --site-root build/docs-site` to preview untagged documentation from the checkout. Published release documentation must use `--released`, which builds every declared version (including the current one) from the immutable `source_ref` in [`docs/versions.json`](docs/versions.json). The Pages workflow uses that released mode for both release events and manual rebuilds.
+Install DocSprout and preview the site locally:
+
+```text
+python -m pip install "https://github.com/ikelaiah/docsprout/archive/refs/tags/v1.1.2.zip"
+python -m docsprout serve
+```
+
+Build the static site and, when you need a portable copy, the deterministic offline archive with its SHA-256 sidecar:
+
+```text
+python -m docsprout build --output build/docs-site --release <release> --offline-archive build/artifacts/stringkit-fp-docs-<release>.zip
+```
+
+Version history restarts with the DocSprout pipeline, so the published site documents the current release until a new `docs/versions.json` history is introduced. The `Publish documentation` workflow validates and builds the site on every published release and on manual dispatch, deploys it to GitHub Pages, and uploads the offline ZIP as a build artifact.
 
 ## License
 

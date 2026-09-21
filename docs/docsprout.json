@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "StringKit-FP",
+    "description": "Practical StringKit-FP documentation for Free Pascal and Lazarus.",
+    "repository_url": "https://github.com/ikelaiah/stringkit-fp",
+    "site_url": "https://ikelaiah.github.io/stringkit-fp"
+  },
+  "theme": {
+    "preset": "teal"
+  },
+  "banner": {
+    "path": "assets/stringkit-fp-banner.svg",
+    "alt": "StringKit-FP yarn-inspired banner"
+  },
+  "identity": {
+    "links": [
+      { "label": "GitHub repository", "url": "https://github.com/ikelaiah/stringkit-fp" }
+    ]
+  },
+  "homepage": {
+    "capabilities": [
+      { "title": "Beginner Guide", "description": "Learn StringKit-FP from your first call to useful text processing." },
+      { "title": "Common Tasks", "description": "Copy tested, working Pascal examples." },
+      { "title": "Quick Lookup", "description": "Find the operation you need quickly." },
+      { "title": "Public API", "description": "Browse StringKit's static and helper interfaces." }
+    ]
+  }
+}

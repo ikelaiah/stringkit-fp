@@ -21,7 +21,7 @@ In Lazarus, open `packages/lazarus/stringkit_fp.lpk`, compile it, then choose **
 
 ## 3. Make the first call
 
-The [first call program](../../examples/documentation/00_first_stringkit_call.pas) converts an identifier and prints:
+The [first call program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/00_first_stringkit_call.pas) converts an identifier and prints:
 
 ```text
 hello_world
@@ -45,15 +45,15 @@ Both calls use the same library logic. Read [Static API vs helper API](../guides
 
 ## 5. Clean and transform text
 
-Use `Trim` for surrounding whitespace and `CollapseWhitespace` for runs inside text. The compiled [normalise input program](../../examples/documentation/01_normalize_input.pas) prints `Ada Lovelace`. Use `ToLower`, `ToUpper`, or `ToTitleCase` for display-oriented changes. For code-like names, use the identifier converters described in [Case conversion](../guides/case-conversion.md).
+Use `Trim` for surrounding whitespace and `CollapseWhitespace` for runs inside text. The compiled [normalise input program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/01_normalize_input.pas) prints `Ada Lovelace`. Use `ToLower`, `ToUpper`, or `ToTitleCase` for display-oriented changes. For code-like names, use the identifier converters described in [Case conversion](../guides/case-conversion.md).
 
 ## 6. Split and join
 
-`Split` returns `TStringDynArray`, declared in the `Types` unit. The compiled [split and join program](../../examples/documentation/03_split_and_join.pas) shows the full `uses` list and prints a three-item join. This is useful for simple delimited text, not quoted CSV fields.
+`Split` returns `TStringDynArray`, declared in the `Types` unit. The compiled [split and join program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/03_split_and_join.pas) shows the full `uses` list and prints a three-item join. This is useful for simple delimited text, not quoted CSV fields.
 
 ## 7. Convert identifier case
 
-Use `ToCamelCase`, `ToPascalCase`, `ToSnakeCase`, or `ToKebabCase` when converting a name such as `HelloWorld` or `snake_case`. Start with the [identifier case program](../../examples/documentation/02_identifier_cases.pas), then see the [case conversion guide](../guides/case-conversion.md) for acronyms and digits.
+Use `ToCamelCase`, `ToPascalCase`, `ToSnakeCase`, or `ToKebabCase` when converting a name such as `HelloWorld` or `snake_case`. Start with the [identifier case program](https://github.com/ikelaiah/stringkit-fp/blob/main/examples/documentation/02_identifier_cases.pas), then see the [case conversion guide](../guides/case-conversion.md) for acronyms and digits.
 
 ## 8. Validate common input
 
