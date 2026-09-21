@@ -33,6 +33,11 @@ StringKit-FP concentrates on focused string-level transformations, matching, val
 
 ## 3. Completed releases
 
+### v1.9.3
+
+- Migrated the documentation site to DocSprout with the teal colour preset, search, themes, and GitHub Pages publishing.
+- Added deterministic offline documentation archives with SHA-256 sidecars, and restarted documentation version history with the DocSprout pipeline.
+
 ### v1.9.2
 
 - Redesigned the versioned documentation experience with a structured sidebar, responsive reading shell, light/dark themes, search, code-copy controls, and stronger built-site validation.
@@ -50,9 +55,9 @@ StringKit-FP concentrates on focused string-level transformations, matching, val
 - Defined explicit `Try...` parsing/decoding contracts and separate percent versus form URL encoding.
 - Improved readability API names, behavioural testing, compiler output, and measured helper coverage.
 
-## 4. Next release: v1.9.3 — Correctness & API Hardening
+## 4. Next release: v1.9.4 — Correctness & API Hardening
 
-v1.9.3 is a quality release, not a feature-count release. Its purpose is to make existing behaviour more trustworthy, more consistent, and easier to use correctly without introducing major new subsystems.
+v1.9.4 is a quality release, not a feature-count release. Its purpose is to make existing behaviour more trustworthy, more consistent, and easier to use correctly without introducing major new subsystems.
 
 ### Validator audit
 
@@ -69,7 +74,7 @@ v1.9.3 is a quality release, not a feature-count release. Its purpose is to make
 - Verify that static and helper APIs remain behaviourally equivalent, including relevant helper feature-flag configurations.
 - Keep documentation examples executable and covered by the documentation test workflow so examples continue to express the real contract.
 
-### Explicitly out of scope for v1.9.3
+### Explicitly out of scope for v1.9.4
 
 - No major new subsystem, parser, framework, or dependency.
 - No Unicode rearchitecture or silent expansion of byte-oriented APIs into Unicode claims.

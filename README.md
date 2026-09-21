@@ -8,17 +8,17 @@
 [![Lazarus](https://img.shields.io/badge/Lazarus-4.0+-blue.svg)](https://www.lazarus-ide.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![CI](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ikelaiah/stringkit-fp/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/Version-1.9.2-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.2)
+[![Version](https://img.shields.io/badge/Version-1.9.3-blueviolet.svg)](https://github.com/ikelaiah/stringkit-fp/releases/tag/v1.9.3)
 
 Practical string handling for Free Pascal and Lazarus: cleaning, identifier case conversion, validation, encoding, regex extraction, approximate matching, and readability helpers. It has no third-party runtime dependencies.
 
 ## Learn StringKit-FP
 
-- [Online Documentation](https://ikelaiah.github.io/stringkit-fp/) — browsable, versioned HTML documentation.
-- [Beginner Guide](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/beginner-guide.html) — installation and the first useful calls.
-- [Recipes](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/recipes.html) — complete, compiled programs with expected output.
-- [Cheat Sheet](https://ikelaiah.github.io/stringkit-fp/1.9.2/start/cheat-sheet.html) — compact API reminder.
-- [API Reference](https://ikelaiah.github.io/stringkit-fp/1.9.2/reference/api-overview.html) — find the right area quickly.
+- [Online Documentation](https://ikelaiah.github.io/stringkit-fp/) — browsable HTML documentation with search, themes, and offline archives.
+- [Beginner Guide](https://ikelaiah.github.io/stringkit-fp/start/beginner-guide.html) — installation and the first useful calls.
+- [Recipes](https://ikelaiah.github.io/stringkit-fp/start/recipes.html) — complete, compiled programs with expected output.
+- [Cheat Sheet](https://ikelaiah.github.io/stringkit-fp/start/cheat-sheet.html) — compact API reminder.
+- [API Reference](https://ikelaiah.github.io/stringkit-fp/reference/api-overview.html) — find the right area quickly.
 
 The repository [documentation index](docs/index.md) links to all beginner guides, topic guides, contracts, and helper references.
 
